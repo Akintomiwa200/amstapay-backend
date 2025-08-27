@@ -2,7 +2,9 @@
 const express = require("express");
 const router = express.Router();
 const transactionController = require("../controllers/transactionController");
-const { protect } = require("../middleware/index"); // Make sure auth middleware exists
+const { protect } = require("../middleware/auth"); // <-- import protect
+
+
 
 // ==============================
 // Swagger Tag: Transactions
@@ -21,7 +23,7 @@ const { protect } = require("../middleware/index"); // Make sure auth middleware
 // Create a new transaction
 /**
  * @swagger
- * /api/transactions:
+ * /transactions:
  *   post:
  *     summary: Create a new transaction (QR, transfer, airtime, data, merchant)
  *     tags: [Transactions]
@@ -74,12 +76,12 @@ const { protect } = require("../middleware/index"); // Make sure auth middleware
  *       500:
  *         description: Server error
  */
-router.post("/", transactionController.createTransaction);
+router.post("/", protect, transactionController.createTransaction);
 
 // Get all transactions for the authenticated user
 /**
  * @swagger
- * /api/transactions:
+ * /transactions:
  *   get:
  *     summary: Get all transactions of the authenticated user
  *     tags: [Transactions]
@@ -97,12 +99,12 @@ router.post("/", transactionController.createTransaction);
  *       500:
  *         description: Server error
  */
-router.get("/", transactionController.getTransactions);
+router.get("/",protect, transactionController.getTransactions);
 
 // Get a single transaction by ID
 /**
  * @swagger
- * /api/transactions/{id}:
+ * /transactions/{id}:
  *   get:
  *     summary: Get a transaction by ID
  *     tags: [Transactions]
@@ -127,7 +129,7 @@ router.get("/", transactionController.getTransactions);
  *       500:
  *         description: Server error
  */
-router.get("/:id", transactionController.getTransactionById);
+router.get("/:id",protect, transactionController.getTransactionById);
 
 
 // ==============================
@@ -188,3 +190,4 @@ module.exports = router;
  *           format: date-time
  *           example: "2025-08-27T12:34:56.789Z"
  */
+

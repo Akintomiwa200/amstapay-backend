@@ -159,3 +159,82 @@ exports.sendResetPasswordEmail = async (to, name, token) => {
     html: htmlContent,
   });
 };
+
+
+/**
+ * Sends a welcome email after account verification.
+ * @param {string} to - User's email
+ * @param {string} fullName - User's full name
+ */
+exports.sendWelcomeEmail = async (to, fullName) => {
+  const htmlContent = `
+  <div style="font-family: Arial, sans-serif; background-color: #f4f4f7; padding: 20px;">
+    <div style="max-width: 600px; margin: auto; background: #ffffff; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+      
+      <!-- Header -->
+      <div style="background-color: #16a34a; color: white; text-align: center; padding: 40px 20px;">
+        <h1 style="margin: 0; font-size: 28px; font-weight: bold;">Welcome Aboard, ${fullName}! 🎉</h1>
+        <p style="margin: 10px 0 0; font-size: 16px;">Your AmstaPay account is ready 🚀</p>
+      </div>
+      
+      <!-- Body -->
+      <div style="padding: 30px; color: #333;">
+        <p style="font-size: 16px; line-height: 1.6;">
+          We’re thrilled to have you join the <strong>AmstaPay</strong> family! Your account has been successfully verified and you can now start enjoying our secure, fast, and reliable payment services.
+        </p>
+
+        <h2 style="font-size: 20px; margin-top: 20px; color: #16a34a;">Here’s what you can do with AmstaPay:</h2>
+        <ul style="font-size: 15px; line-height: 1.8; padding-left: 20px; color: #555;">
+          <li>⚡ Instant wallet-to-wallet transfers</li>
+          <li>💳 Pay bills and subscriptions with ease</li>
+          <li>🌍 Send and receive money globally</li>
+          <li>📊 Track your transactions in real-time</li>
+          <li>🔒 Bank-grade security for peace of mind</li>
+        </ul>
+
+        <div style="text-align: center; margin: 40px 0;">
+          <a href="${process.env.CLIENT_URL}" style="
+            display: inline-block;
+            background-color: #16a34a;
+            color: #ffffff;
+            font-size: 18px;
+            font-weight: bold;
+            padding: 15px 30px;
+            border-radius: 8px;
+            text-decoration: none;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+          ">
+            Explore AmstaPay Now
+          </a>
+        </div>
+
+        <p style="font-size: 14px; color: #555; line-height: 1.6;">
+          We’re constantly working on adding new features and improving your experience. Stay tuned for exciting updates!
+        </p>
+
+        <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;" />
+
+        <p style="font-size: 13px; color: #999; text-align: center;">
+          Need help? Contact our support team anytime at 
+          <a href="mailto:support@amstapay.com" style="color:#16a34a; text-decoration:none;">support@amstapay.com</a>
+        </p>
+      </div>
+      
+      <!-- Footer -->
+      <div style="background-color: #fafafa; color: #888; text-align: center; padding: 20px; font-size: 12px;">
+        <p style="margin: 5px 0;">© ${new Date().getFullYear()} AmstaPay Inc. All rights reserved.</p>
+        <p style="margin: 0;">123 Payment Lane, Lagos, Nigeria</p>
+      </div>
+
+    </div>
+  </div>
+  `;
+
+  await transporter.sendMail({
+    from: `"AmstaPay" <${process.env.EMAIL_USER}>`,
+    to,
+    subject: "Welcome to AmstaPay 🎉",
+    html: htmlContent,
+  });
+};
+

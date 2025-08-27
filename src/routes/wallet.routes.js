@@ -1,7 +1,8 @@
 const express = require("express");
 const router = express.Router();
 const walletController = require("../controllers/walletController");
-const { protect } = require("../middleware/index"); // dummy or real protect
+const { protect } = require("../middleware/auth"); // <-- import protect
+
 
 // ==============================
 // Swagger Tag: Wallets
@@ -18,7 +19,7 @@ const { protect } = require("../middleware/index"); // dummy or real protect
 // --------------------
 /**
  * @swagger
- * /api/wallets/balance:
+ * /wallets/balance:
  *   get:
  *     summary: Get wallet balance
  *     tags: [Wallets]
@@ -36,14 +37,14 @@ const { protect } = require("../middleware/index"); // dummy or real protect
  *                   type: number
  *                   example: 1000
  */
-router.get("/balance", walletController.getBalance);
+router.get("/balance",protect, walletController.getBalance);
 
 // --------------------
 // Fund wallet
 // --------------------
 /**
  * @swagger
- * /api/wallets/fund:
+ * /wallets/fund:
  *   post:
  *     summary: Fund wallet
  *     tags: [Wallets]
@@ -74,14 +75,14 @@ router.get("/balance", walletController.getBalance);
  *                   type: number
  *                   example: 1500
  */
-router.post("/fund", walletController.fundWallet);
+router.post("/fund",protect, walletController.fundWallet);
 
 // --------------------
 // Withdraw from wallet
 // --------------------
 /**
  * @swagger
- * /api/wallets/withdraw:
+ * /wallets/withdraw:
  *   post:
  *     summary: Withdraw money from wallet
  *     tags: [Wallets]
@@ -112,14 +113,14 @@ router.post("/fund", walletController.fundWallet);
  *                   type: number
  *                   example: 800
  */
-router.post("/withdraw", walletController.withdrawWallet);
+router.post("/withdraw",protect, walletController.withdrawWallet);
 
 // --------------------
 // Get wallet transactions
 // --------------------
 /**
  * @swagger
- * /api/wallets/transactions:
+ * /wallets/transactions:
  *   get:
  *     summary: Get wallet transaction history
  *     tags: [Wallets]
@@ -146,6 +147,6 @@ router.post("/withdraw", walletController.withdrawWallet);
  *                     format: date-time
  *                     example: "2025-08-27T12:34:56.789Z"
  */
-router.get("/transactions", walletController.getTransactions);
+router.get("/transactions",protect, walletController.getTransactions);
 
 module.exports = router;

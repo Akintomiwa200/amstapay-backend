@@ -1,6 +1,7 @@
 const User = require("../models/User");
 const jwt = require("jsonwebtoken");
-const { sendVerificationCodeEmail } = require("../services/emailService");
+const { sendVerificationCodeEmail, sendWelcomeEmail } = require("../services/emailService");
+
 
 exports.signup = async (req, res) => {
   const { fullName, email, phoneNumber, password, accountType, ...rest } = req.body;
@@ -49,11 +50,15 @@ exports.verifyEmail = async (req, res) => {
     user.codeExpires = null;
     await user.save();
 
-    res.json({ message: "Email verified successfully" });
+    // ✅ Send welcome email here
+    await sendWelcomeEmail(user.email, user.fullName);
+
+    res.json({ message: "Email verified successfully, welcome email sent" });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
+
 
 
 exports.login = async (req, res) => {

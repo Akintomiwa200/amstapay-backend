@@ -1,12 +1,11 @@
-// app.js - Add debugging to see what's happening during startup
+// app.js - Amstapay API bootstrap
 require("dotenv").config();
 const express = require("express");
-const bodyParser = require("body-parser");
 
-console.log("🚀 Starting Amtapay API...");
+console.log("🚀 Starting Amstapay API...");
 
-// Routes - Add try-catch to see which route is causing issues
-let authRoutes, paymentRoutes, walletRoutes, transactionRoutes;
+// ===== Load routes with debugging =====
+let authRoutes, paymentRoutes, walletRoutes, transactionRoutes, userRoutes;
 
 try {
   console.log("📁 Loading auth routes...");
@@ -42,40 +41,47 @@ try {
   process.exit(1); // Exit if transaction routes fail to load
 }
 
-// Middleware aggregator
-const applyMiddleware = require("./middleware");
+try {
+  console.log("📁 Loading user routes...");
+  userRoutes = require("./routes/user.routes");
+  console.log("✅ User routes loaded");
+} catch (err) {
+  console.error("❌ Error loading user routes:", err.message);
+}
+
+// ===== Initialize app =====
 const app = express();
 
+// ===== Apply global middleware =====
+const applyMiddleware = require("./middleware/index");
 console.log("⚙️  Setting up middleware...");
-
-// ===== Body parser =====
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
-
-// ===== Apply Middleware from middleware folder =====
 applyMiddleware(app);
 
 // ===== Health check =====
 app.get("/health", (req, res) => {
-  res.json({ status: "ok", message: "Amtapay API is running 🚀" });
+  res.json({ status: "ok", message: "Amstapay API is running 🚀" });
 });
 
+// ===== Mount routes =====
 console.log("🛣️  Setting up routes...");
-
-// ===== Routes =====
 if (authRoutes) app.use("/api/auth", authRoutes);
 if (paymentRoutes) app.use("/api/payments", paymentRoutes);
 if (walletRoutes) app.use("/api/wallets", walletRoutes);
 if (transactionRoutes) app.use("/api/transactions", transactionRoutes);
+if (userRoutes) app.use("/api/users", userRoutes);
 
 console.log("🎯 All routes configured");
 
-// ===== Error handling =====
+// ===== 404 handler =====
+app.use((req, res, next) => {
+  res.status(404).json({ message: "Route not found" });
+});
+
+// ===== Global error handler =====
 app.use((err, req, res, next) => {
   console.error("❌ Error:", err.stack);
-  res.status(500).json({
-    error: "Something went wrong!",
-    details: err.message,
+  res.status(err.status || 500).json({
+    message: err.message || "Internal server error",
   });
 });
 

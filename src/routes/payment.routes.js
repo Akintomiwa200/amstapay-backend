@@ -1,7 +1,8 @@
 const express = require("express");
 const router = express.Router();
 const paymentController = require("../controllers/paymentController");
-const { protect } = require("../middleware/index");
+const { protect } = require("../middleware/auth"); // <-- import protect
+
 
 // ==============================
 // Swagger Tag: Payments
@@ -16,7 +17,7 @@ const { protect } = require("../middleware/index");
 // Send money via QR
 /**
  * @swagger
- * /api/payments/send:
+ * /payments/send:
  *   post:
  *     summary: Send money via QR code
  *     tags: [Payments]
@@ -40,12 +41,12 @@ const { protect } = require("../middleware/index");
  *       200:
  *         description: Payment sent successfully
  */
-router.post("/send", paymentController.sendPayment);
+router.post("/send",protect, paymentController.sendPayment);
 
 // Receive money via QR
 /**
  * @swagger
- * /api/payments/receive:
+ * /payments/receive:
  *   post:
  *     summary: Receive money via QR code
  *     tags: [Payments]
@@ -53,6 +54,6 @@ router.post("/send", paymentController.sendPayment);
  *       200:
  *         description: Payment received
  */
-router.post("/receive", paymentController.receivePayment);
+router.post("/receive",protect, paymentController.receivePayment);
 
 module.exports = router;
