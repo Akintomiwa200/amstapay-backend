@@ -15,7 +15,7 @@ const options = {
     },
     servers: [
       { url: `http://localhost:${process.env.PORT || 3000}/api`, description: "Local development server" },
-      { url: "https://amstapay-backend.onrender.com", description: "Production server" },
+      { url: "https://amstapay-backend.onrender.com/api", description: "Production server" },
     ],
     components: {
       securitySchemes: {
