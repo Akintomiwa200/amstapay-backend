@@ -1,84 +1,174 @@
-// controllers/transactionController.js
 const Transaction = require("../models/Transaction");
-const User = require("../models/User");
+const Wallet = require("../models/Wallet");
+const { v4: uuidv4 } = require("uuid");
+const {
+  verifyBankAccount,
+  createRecipient,
+  initiateTransfer,
+} = require("./paystackController");
 
-console.log("📁 Transaction controller loaded");
 
-// Create a new transaction
+
+const {
+  buyAirtime,
+  buyData,
+  payCable,
+  payElectricity,
+} = require("../services/paystackService");
+
+
+
+// Create a transaction
 const createTransaction = async (req, res) => {
   try {
-    console.log("🚀 createTransaction called");
-    const { type, receiverAccountNumber, receiverName, receiverBank, amount, qrData, reference, merchantId, description } = req.body;
-    
-    if (!type || !amount) {
-      return res.status(400).json({ message: "Transaction type and amount are required" });
-    }
+    const {
+      type,
+      amount,
+      receiverAccountNumber,
+      receiverBank,
+      receiverId,
+      qrData,
+      description,
+      phone,
+      plan,
+      provider,
+      meterNumber,
+    } = req.body;
 
-    const sender = req.user; // from auth middleware
-    
-    const transactionData = {
+    const sender = req.user;
+    const reference = `AMSTA-${uuidv4()}`;
+
+    const transaction = new Transaction({
       sender: sender._id,
       type,
       amount,
-      receiverAccountNumber: receiverAccountNumber || null,
-      receiverName: receiverName || null,
-      receiverBank: receiverBank || null,
-      qrData: qrData || null,
-      reference: reference || null,
-      merchantId: merchantId || null,
-      description: description || null,
+      reference,
       status: "pending",
-    };
+      metadata: {
+        description,
+        qrData,
+        receiverBank,
+        receiverAccountNumber,
+        phone,
+        plan,
+        provider,
+        meterNumber,
+      },
+    });
 
-    const transaction = new Transaction(transactionData);
+    // 🔹 Wallet → Wallet
+    if (type === "wallet_transfer") {
+      const senderWallet = await Wallet.findOne({ user: sender._id });
+      const receiverWallet = await Wallet.findOne({ user: receiverId });
+
+      if (!senderWallet || !receiverWallet) {
+        return res.status(400).json({ message: "Invalid sender/receiver wallet" });
+      }
+      if (senderWallet.balance < amount) {
+        return res.status(400).json({ message: "Insufficient balance" });
+      }
+
+      senderWallet.balance -= amount;
+      senderWallet.ledger.push({ type: "debit", amount, transaction: transaction._id });
+
+      receiverWallet.balance += amount;
+      receiverWallet.ledger.push({ type: "credit", amount, transaction: transaction._id });
+
+      await senderWallet.save();
+      await receiverWallet.save();
+
+      transaction.receiver = receiverId;
+      transaction.status = "success";
+    }
+
+    // 🔹 Wallet → Bank (Paystack Transfer)
+    if (type === "bank_transfer") {
+      const senderWallet = await Wallet.findOne({ user: sender._id });
+      if (!senderWallet || senderWallet.balance < amount) {
+        return res.status(400).json({ message: "Insufficient wallet balance" });
+      }
+
+      senderWallet.balance -= amount;
+      senderWallet.ledger.push({ type: "debit", amount, transaction: transaction._id });
+      await senderWallet.save();
+
+      const verified = await verifyBankAccount(receiverAccountNumber, receiverBank);
+      const recipient = await createRecipient(
+        verified.account_name,
+        receiverAccountNumber,
+        receiverBank
+      );
+      const paystackTx = await initiateTransfer(
+        amount,
+        recipient.recipient_code,
+        description || "AmstaPay Transfer",
+        reference
+      );
+
+      transaction.metadata = { paystack: paystackTx, recipientCode: recipient.recipient_code };
+      transaction.status = "processing"; // will be updated by webhook
+    }
+
+    // 🔹 QR Payments
+    if (type === "qr_payment") {
+      const parsedQR = JSON.parse(qrData);
+      const receiverWallet = await Wallet.findOne({ user: parsedQR.userId });
+      const senderWallet = await Wallet.findOne({ user: sender._id });
+
+      if (!receiverWallet || !senderWallet) {
+        return res.status(400).json({ message: "Invalid QR participants" });
+      }
+      if (senderWallet.balance < amount) {
+        return res.status(400).json({ message: "Insufficient balance" });
+      }
+
+      senderWallet.balance -= amount;
+      senderWallet.ledger.push({ type: "debit", amount, transaction: transaction._id });
+
+      receiverWallet.balance += amount;
+      receiverWallet.ledger.push({ type: "credit", amount, transaction: transaction._id });
+
+      await senderWallet.save();
+      await receiverWallet.save();
+
+      transaction.receiver = receiverWallet.user;
+      transaction.status = "success";
+    }
+
+    // 🔹 Airtime Purchase
+    if (type === "airtime") {
+      const paystackRes = await buyAirtime(phone, amount, reference);
+      transaction.metadata.paystack = paystackRes;
+      transaction.status = paystackRes?.status ? "success" : "failed";
+    }
+
+    // 🔹 Data Purchase
+    if (type === "data") {
+      const paystackRes = await buyData(phone, plan, reference);
+      transaction.metadata.paystack = paystackRes;
+      transaction.status = paystackRes?.status ? "success" : "failed";
+    }
+
+    // 🔹 Cable TV
+    if (type === "cable") {
+      const paystackRes = await payCable(receiverAccountNumber, provider, plan, reference);
+      transaction.metadata.paystack = paystackRes;
+      transaction.status = paystackRes?.status ? "success" : "failed";
+    }
+
+    // 🔹 Electricity
+    if (type === "electricity") {
+      const paystackRes = await payElectricity(meterNumber, provider, amount, reference);
+      transaction.metadata.paystack = paystackRes;
+      transaction.status = paystackRes?.status ? "success" : "failed";
+    }
+
     await transaction.save();
-    
-    res.status(201).json({ message: "Transaction created", transaction });
+    res.status(201).json({ message: "Transaction initiated", transaction });
   } catch (err) {
-    console.error("❌ Error in createTransaction:", err);
-    res.status(500).json({ message: err.message });
+    console.error("❌ Transaction Error:", err.response?.data || err.message);
+    res.status(500).json({ message: "Transaction failed", error: err.message });
   }
 };
 
-// Get all transactions for the logged-in user
-const getTransactions = async (req, res) => {
-  try {
-    console.log("📋 getTransactions called");
-    const transactions = await Transaction.find({ sender: req.user._id })
-      .sort({ createdAt: -1 })
-      .populate("sender", "fullName email phoneNumber");
-      
-    res.json(transactions);
-  } catch (err) {
-    console.error("❌ Error in getTransactions:", err);
-    res.status(500).json({ message: err.message });
-  }
-};
-
-// Get single transaction by ID
-const getTransactionById = async (req, res) => {
-  try {
-    console.log("🔍 getTransactionById called for ID:", req.params.id);
-    const transaction = await Transaction.findById(req.params.id)
-      .populate("sender", "fullName email phoneNumber");
-    
-    if (!transaction) {
-      return res.status(404).json({ message: "Transaction not found" });
-    }
-    
-    if (transaction.sender._id.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ message: "Access denied" });
-    }
-    
-    res.json(transaction);
-  } catch (err) {
-    console.error("❌ Error in getTransactionById:", err);
-    res.status(500).json({ message: err.message });
-  }
-};
-
-module.exports = {
-  createTransaction,
-  getTransactions,
-  getTransactionById
-};
+module.exports = { createTransaction };

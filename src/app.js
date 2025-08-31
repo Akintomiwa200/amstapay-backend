@@ -5,7 +5,7 @@ const express = require("express");
 console.log("🚀 Starting Amstapay API...");
 
 // ===== Load routes with debugging =====
-let authRoutes, paymentRoutes, walletRoutes, transactionRoutes, userRoutes;
+let authRoutes, paymentRoutes, walletRoutes, transactionRoutes, userRoutes, webhookRoutes;
 
 try {
   console.log("📁 Loading auth routes...");
@@ -49,6 +49,14 @@ try {
   console.error("❌ Error loading user routes:", err.message);
 }
 
+try {
+  console.log("📁 Loading webhook routes...");
+  webhookRoutes = require("./routes/webhookRoutes");
+  console.log("✅ Webhook routes loaded");
+} catch (err) {
+  console.error("❌ Error loading webhook routes:", err.message);
+}
+
 // ===== Initialize app =====
 const app = express();
 
@@ -69,6 +77,7 @@ if (paymentRoutes) app.use("/api/payments", paymentRoutes);
 if (walletRoutes) app.use("/api/wallets", walletRoutes);
 if (transactionRoutes) app.use("/api/transactions", transactionRoutes);
 if (userRoutes) app.use("/api/users", userRoutes);
+if (webhookRoutes) app.use("/api/webhook", webhookRoutes); // ✅ NEW webhook mount
 
 console.log("🎯 All routes configured");
 

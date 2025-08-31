@@ -131,6 +131,62 @@ router.get("/",protect, transactionController.getTransactions);
  */
 router.get("/:id",protect, transactionController.getTransactionById);
 
+// Update transaction status (admin/system)
+/**
+ * @swagger
+ * /transactions/{id}/status:
+ *   patch:
+ *     summary: Update transaction status (pending → success/failed/reversed)
+ *     tags: [Transactions]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - status
+ *             properties:
+ *               status:
+ *                 type: string
+ *                 enum: [pending, success, failed, reversed]
+ *     responses:
+ *       200:
+ *         description: Transaction status updated
+ *       400:
+ *         description: Invalid status
+ *       404:
+ *         description: Transaction not found
+ */
+router.patch("/:id/status", protect, transactionController.updateTransactionStatus);
+
+// Paystack webhook (no auth, but secured via secret header)
+/**
+ * @swagger
+ * /transactions/webhook/paystack:
+ *   post:
+ *     summary: Paystack webhook for transaction events
+ *     tags: [Transactions]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       200:
+ *         description: Webhook received successfully
+ */
+router.post("/webhook/paystack", transactionController.handlePaystackWebhook);
+
 
 // ==============================
 // Export Router

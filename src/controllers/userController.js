@@ -1,4 +1,16 @@
 const User = require("../models/User");
+const jwt = require("jsonwebtoken");
+
+
+// allowed fields by account type
+const allowedFields = {
+  personal: ["fullName", "email", "phoneNumber", "dateOfBirth", "gender", "residentialAddress"],
+  business: ["fullName", "email", "phoneNumber", "businessName", "businessAddress", "businessType"],
+  agent: ["fullName", "email", "phoneNumber", "dateOfBirth", "gender", "residentialAddress", "bvnOrNin", "bankName", "accountName", "accountNumber", "guarantorName", "guarantorRelationship", "guarantorPhone", "guarantorAddress"],
+  enterprise: ["fullName", "email", "phoneNumber", "businessName", "businessAddress", "businessType"],
+  company: ["fullName", "email", "phoneNumber", "businessName", "businessAddress", "businessType"],
+};
+
 
 // Get current user profile
 exports.getProfile = async (req, res) => {
@@ -6,7 +18,20 @@ exports.getProfile = async (req, res) => {
     const user = await User.findById(req.user._id).select("-password");
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    res.json(user);
+    // Filter response fields by account type
+    const permitted = allowedFields[user.accountType] || [];
+    const filteredProfile = {};
+    for (const field of permitted) {
+      filteredProfile[field] = user[field];
+    }
+
+    // Always return some core fields
+    filteredProfile._id = user._id;
+    filteredProfile.accountType = user.accountType;
+    filteredProfile.kycLevel = user.kycLevel;
+    filteredProfile.isOtpVerified = user.isOtpVerified;
+
+    res.json(filteredProfile);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -15,18 +40,30 @@ exports.getProfile = async (req, res) => {
 // Update user profile
 exports.updateProfile = async (req, res) => {
   try {
-    const updates = req.body;
-    const user = await User.findByIdAndUpdate(req.user._id, updates, {
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    const accountType = user.accountType;
+    const permitted = allowedFields[accountType] || [];
+    
+    // Filter updates
+    const updates = {};
+    for (const key of Object.keys(req.body)) {
+      if (permitted.includes(key)) {
+        updates[key] = req.body[key];
+      }
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(req.user._id, updates, {
       new: true,
     }).select("-password");
 
-    if (!user) return res.status(404).json({ message: "User not found" });
-
-    res.json({ message: "Profile updated successfully", user });
+    res.json({ message: "Profile updated successfully", user: updatedUser });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
+
 
 // Change password
 exports.changePassword = async (req, res) => {
@@ -50,6 +87,8 @@ exports.changePassword = async (req, res) => {
   }
 };
 
+
+
 // Delete user account
 exports.deleteAccount = async (req, res) => {
   try {
@@ -63,7 +102,9 @@ exports.deleteAccount = async (req, res) => {
 // Admin only: Get all users
 exports.getAllUsers = async (req, res) => {
   try {
-    // TODO: Add role-based auth check here
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ message: "Forbidden" });
+    }
     const users = await User.find().select("-password");
     res.json(users);
   } catch (err) {

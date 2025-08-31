@@ -115,6 +115,38 @@ router.post("/fund",protect, walletController.fundWallet);
  */
 router.post("/withdraw",protect, walletController.withdrawWallet);
 
+
+
+// Transfer money
+/**
+ * @swagger
+ * /wallets/transfer:
+ *   post:
+ *     summary: Transfer money between wallets
+ *     tags: [Wallets]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               recipientAccountNumber:
+ *                 type: string
+ *                 example: "8123456789"
+ *               amount:
+ *                 type: number
+ *                 example: 500
+ *     responses:
+ *       200:
+ *         description: Transfer successful
+ */
+router.post("/transfer", protect, walletController.transferWallet);
+
+
+
 // --------------------
 // Get wallet transactions
 // --------------------

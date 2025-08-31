@@ -2,7 +2,9 @@ const User = require("../models/User");
 const jwt = require("jsonwebtoken");
 const { sendVerificationCodeEmail, sendWelcomeEmail } = require("../services/emailService");
 
-
+// --------------------
+// Signup
+// --------------------
 exports.signup = async (req, res) => {
   const { fullName, email, phoneNumber, password, accountType, ...rest } = req.body;
 
@@ -10,8 +12,8 @@ exports.signup = async (req, res) => {
     const existingUser = await User.findOne({ $or: [{ email }, { phoneNumber }] });
     if (existingUser) return res.status(400).json({ error: "Email or phone already in use" });
 
-    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit code
-    const codeExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 min expiry
+    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const codeExpires = new Date(Date.now() + 10 * 60 * 1000);
 
     const user = new User({
       fullName,
@@ -23,6 +25,7 @@ exports.signup = async (req, res) => {
       codeExpires,
       ...rest,
     });
+
     await user.save();
 
     await sendVerificationCodeEmail(email, fullName, verificationCode);
@@ -33,6 +36,9 @@ exports.signup = async (req, res) => {
   }
 };
 
+// --------------------
+// Verify Email
+// --------------------
 exports.verifyEmail = async (req, res) => {
   try {
     const { email, code } = req.body;
@@ -50,7 +56,6 @@ exports.verifyEmail = async (req, res) => {
     user.codeExpires = null;
     await user.save();
 
-    // ✅ Send welcome email here
     await sendWelcomeEmail(user.email, user.fullName);
 
     res.json({ message: "Email verified successfully, welcome email sent" });
@@ -59,14 +64,15 @@ exports.verifyEmail = async (req, res) => {
   }
 };
 
-
-
+// --------------------
+// Login
+// --------------------
 exports.login = async (req, res) => {
   try {
-    const { emailOrPhone, password } = req.body;
+    const { emailOrPhone, password, mode } = req.body; // ✅ added mode
 
     const user = await User.findOne({
-      $or: [{ email: emailOrPhone }, { phoneNumber: emailOrPhone }]
+      $or: [{ email: emailOrPhone }, { phoneNumber: emailOrPhone }],
     });
 
     if (!user) return res.status(404).json({ message: "User not found" });
@@ -78,16 +84,31 @@ exports.login = async (req, res) => {
       return res.status(403).json({ message: "Please verify your email first" });
     }
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
+    // ✅ Session modes
+    let expiresIn = "24h"; // default
+    if (mode === "passwordFree") expiresIn = "30d";
+    else if (mode === "strict") expiresIn = "1h";
 
-    res.json({ message: "Login successful", token, user });
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn });
+
+    res.json({
+      message: "Login successful",
+      token,
+      mode: mode || "24h",
+      user: {
+        id: user._id,
+        fullName: user.fullName,
+        amstapayAccountNumber: user.amstapayAccountNumber,
+      },
+    });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
 
-
-// Forgot password using email OR phone
+// --------------------
+// Forgot Password
+// --------------------
 exports.forgotPassword = async (req, res) => {
   try {
     const { emailOrPhone } = req.body;
@@ -105,7 +126,6 @@ exports.forgotPassword = async (req, res) => {
     user.resetPasswordExpires = resetExpires;
     await user.save();
 
-    // Send reset code via email if available
     if (user.email) {
       await sendVerificationCodeEmail(user.email, user.fullName, resetCode);
     }
@@ -116,7 +136,9 @@ exports.forgotPassword = async (req, res) => {
   }
 };
 
-// Verify reset code
+// --------------------
+// Verify Reset Code
+// --------------------
 exports.verifyResetCode = async (req, res) => {
   try {
     const { emailOrPhone, code } = req.body;
@@ -137,7 +159,9 @@ exports.verifyResetCode = async (req, res) => {
   }
 };
 
-// Reset password
+// --------------------
+// Reset Password
+// --------------------
 exports.resetPassword = async (req, res) => {
   try {
     const { emailOrPhone, code, newPassword } = req.body;
