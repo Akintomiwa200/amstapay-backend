@@ -130,7 +130,7 @@ router.post("/login", login);
  *       400:
  *         description: Current PIN is incorrect
  */
-router.post("/change-pin", authMiddleware, changePin);
+router.post("/change-pin", changePin);
 
 /**
  * @swagger
