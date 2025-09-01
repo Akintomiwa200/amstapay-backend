@@ -1,21 +1,24 @@
 const User = require("../models/User");
 const jwt = require("jsonwebtoken");
+const bcrypt = require("bcryptjs");
 
-
-// allowed fields by account type
+// Allowed fields by account type
 const allowedFields = {
-  personal: ["fullName", "email", "phoneNumber", "dateOfBirth", "gender", "residentialAddress"],
-  business: ["fullName", "email", "phoneNumber", "businessName", "businessAddress", "businessType"],
-  agent: ["fullName", "email", "phoneNumber", "dateOfBirth", "gender", "residentialAddress", "bvnOrNin", "bankName", "accountName", "accountNumber", "guarantorName", "guarantorRelationship", "guarantorPhone", "guarantorAddress"],
-  enterprise: ["fullName", "email", "phoneNumber", "businessName", "businessAddress", "businessType"],
-  company: ["fullName", "email", "phoneNumber", "businessName", "businessAddress", "businessType"],
+  personal: ["fullName", "email", "phoneNumber", "dateOfBirth", "gender", "residentialAddress", "pin"],
+  business: ["fullName", "email", "phoneNumber", "businessName", "businessAddress", "businessType", "pin"],
+  agent: [
+    "fullName", "email", "phoneNumber", "dateOfBirth", "gender", "residentialAddress",
+    "bvnOrNin", "bankName", "accountName", "accountNumber",
+    "guarantorName", "guarantorRelationship", "guarantorPhone", "guarantorAddress", "pin"
+  ],
+  enterprise: ["fullName", "email", "phoneNumber", "businessName", "businessAddress", "businessType", "pin"],
+  company: ["fullName", "email", "phoneNumber", "businessName", "businessAddress", "businessType", "pin"],
 };
-
 
 // Get current user profile
 exports.getProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.user._id).select("-password");
+    const user = await User.findById(req.user._id).select("-password -pin");
     if (!user) return res.status(404).json({ message: "User not found" });
 
     // Filter response fields by account type
@@ -45,25 +48,28 @@ exports.updateProfile = async (req, res) => {
 
     const accountType = user.accountType;
     const permitted = allowedFields[accountType] || [];
-    
-    // Filter updates
+
+    // Filter and hash updates
     const updates = {};
     for (const key of Object.keys(req.body)) {
       if (permitted.includes(key)) {
-        updates[key] = req.body[key];
+        if (key === "pin") {
+          updates[key] = await bcrypt.hash(req.body[key], 10);
+        } else {
+          updates[key] = req.body[key];
+        }
       }
     }
 
     const updatedUser = await User.findByIdAndUpdate(req.user._id, updates, {
       new: true,
-    }).select("-password");
+    }).select("-password -pin");
 
     res.json({ message: "Profile updated successfully", user: updatedUser });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
-
 
 // Change password
 exports.changePassword = async (req, res) => {
@@ -87,7 +93,27 @@ exports.changePassword = async (req, res) => {
   }
 };
 
+// Change PIN
+exports.changePin = async (req, res) => {
+  try {
+    const { currentPin, newPin } = req.body;
+    const user = await User.findById(req.user._id);
 
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    const isMatch = await bcrypt.compare(currentPin, user.pin || "");
+    if (!isMatch) {
+      return res.status(400).json({ message: "Current PIN is incorrect" });
+    }
+
+    user.pin = await bcrypt.hash(newPin, 10);
+    await user.save();
+
+    res.json({ message: "PIN changed successfully" });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
 
 // Delete user account
 exports.deleteAccount = async (req, res) => {
@@ -105,7 +131,7 @@ exports.getAllUsers = async (req, res) => {
     if (req.user.role !== "admin") {
       return res.status(403).json({ message: "Forbidden" });
     }
-    const users = await User.find().select("-password");
+    const users = await User.find().select("-password -pin");
     res.json(users);
   } catch (err) {
     res.status(500).json({ message: err.message });
