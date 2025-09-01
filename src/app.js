@@ -51,7 +51,7 @@ try {
 
 try {
   console.log("📁 Loading webhook routes...");
-  webhookRoutes = require("./routes/webhookRoutes");
+  webhookRoutes = require("./routes/webhook.routes");
   console.log("✅ Webhook routes loaded");
 } catch (err) {
   console.error("❌ Error loading webhook routes:", err.message);
