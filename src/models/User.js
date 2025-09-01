@@ -20,8 +20,8 @@ const userSchema = new mongoose.Schema(
     phoneNumber: { type: String, unique: true, sparse: true },
 
     amstapayAccountNumber: { type: String, unique: true },
-    password: { type: String, required: true },
-    pin: { type: String, required: true }, // 🔹 Transaction PIN
+    pin: { type: String, required: true, minlength: 4, maxlength: 6 },
+    password: { type: String, required: true, minlength: 6 },
 
     accountType: {
       type: String,
@@ -117,6 +117,8 @@ const userSchema = new mongoose.Schema(
     verifications: [verificationSchema],
     kycLevel: { type: Number, default: 0 },
   },
+
+  
   { timestamps: true }
 );
 

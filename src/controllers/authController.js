@@ -274,3 +274,29 @@ exports.resetPin = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
+
+// --------------------
+// Change PIN (requires authentication)
+// --------------------
+exports.changePin = async (req, res) => {
+  try {
+    const { currentPin, newPin } = req.body;
+    const user = await User.findById(req.user._id);
+
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    // Compare current pin (make sure User schema hashes pins like passwords)
+    const isMatch = await user.comparePin(currentPin);
+    if (!isMatch) {
+      return res.status(400).json({ message: "Current PIN is incorrect" });
+    }
+
+    user.pin = newPin; // User schema pre-save hook will hash it
+    await user.save();
+
+    res.json({ message: "PIN changed successfully" });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};

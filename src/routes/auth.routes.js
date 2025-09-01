@@ -6,8 +6,11 @@ const {
   forgotPassword,
   resetPassword,
   changePin,
+  forgotPin,
+  verifyPinResetCode,
+  resetPin,
 } = require("../controllers/authController");
-
+const { protect } = require("../middleware/auth");
 const router = express.Router();
 const multer = require("multer");
 const upload = multer({ dest: "uploads/" });
@@ -130,7 +133,7 @@ router.post("/login", login);
  *       400:
  *         description: Current PIN is incorrect
  */
-router.post("/change-pin", changePin);
+router.post("/change-pin", protect, changePin);
 
 /**
  * @swagger
@@ -224,6 +227,106 @@ router.post("/verify", verifyEmail);
  *         description: Missing email or phone
  */
 router.post("/forgot-password", forgotPassword);
+/**
+ * @swagger
+ * /auth/forgot-pin:
+ *   post:
+ *     summary: Request a PIN reset via email or phone
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - emailOrPhone
+ *             properties:
+ *               emailOrPhone:
+ *                 type: string
+ *                 example: johndoe@example.com
+ *     responses:
+ *       200:
+ *         description: PIN reset instructions sent if user exists
+ *       400:
+ *         description: Missing email or phone
+ */
+// ✅ Forgot PIN
+router.post("/forgot-pin", forgotPin);
+
+
+/**
+ * @swagger
+ * /auth/verify-pin-reset-code:
+ *   post:
+ *     summary: Verify the 6-digit code for PIN reset
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - emailOrPhone
+ *               - code
+ *             properties:
+ *               emailOrPhone:
+ *                 type: string
+ *                 example: johndoe@example.com
+ *               code:
+ *                 type: string
+ *                 example: "123456"
+ *                 description: 6-digit verification code sent via email/phone
+ *     responses:
+ *       200:
+ *         description: PIN reset code verified successfully
+ *       400:
+ *         description: Invalid or expired verification code
+ *       404:
+ *         description: User not found
+ */
+router.post("/verify-pin-reset-code", verifyPinResetCode);
+
+
+/**
+ * @swagger
+ * /auth/reset-pin:
+ *   post:
+ *     summary: Reset transaction PIN using verified code
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - emailOrPhone
+ *               - code
+ *               - newPin
+ *             properties:
+ *               emailOrPhone:
+ *                 type: string
+ *                 example: johndoe@example.com
+ *               code:
+ *                 type: string
+ *                 example: "123456"
+ *                 description: 6-digit code verified earlier
+ *               newPin:
+ *                 type: string
+ *                 example: "5678"
+ *                 description: New 4-digit transaction PIN
+ *     responses:
+ *       200:
+ *         description: PIN reset successfully
+ *       400:
+ *         description: Invalid code or expired
+ *       404:
+ *         description: User not found
+ */
+router.post("/reset-pin", resetPin);
+
 
 /**
  * @swagger
