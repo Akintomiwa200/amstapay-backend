@@ -29,6 +29,12 @@ const userSchema = new mongoose.Schema(
       required: true,
     },
 
+
+    verificationCode: { type: String },
+    codeExpires: { type: Date },
+    isVerified: { type: Boolean, default: false },
+
+
     // 🔹 OTP verification
     isOtpVerified: { type: Boolean, default: false },
     otpCode: { type: String },
@@ -118,7 +124,7 @@ const userSchema = new mongoose.Schema(
     kycLevel: { type: Number, default: 0 },
   },
 
-  
+
   { timestamps: true }
 );
 
