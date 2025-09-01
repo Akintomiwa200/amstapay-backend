@@ -1,6 +1,11 @@
 const User = require("../models/User");
 const jwt = require("jsonwebtoken");
-const { sendVerificationCodeEmail, sendWelcomeEmail } = require("../services/emailService");
+const { 
+  sendVerificationCodeEmail, 
+  sendWelcomeEmail,
+  sendResetPinEmail,
+  sendPinResetSuccessEmail
+} = require("../services/emailService");
 
 // --------------------
 // Signup
@@ -27,7 +32,6 @@ exports.signup = async (req, res) => {
     });
 
     await user.save();
-
     await sendVerificationCodeEmail(email, fullName, verificationCode);
 
     res.status(201).json({ message: "Signup successful, verification code sent to email" });
@@ -69,7 +73,7 @@ exports.verifyEmail = async (req, res) => {
 // --------------------
 exports.login = async (req, res) => {
   try {
-    const { emailOrPhone, password, mode } = req.body; // ✅ added mode
+    const { emailOrPhone, password, mode } = req.body;
 
     const user = await User.findOne({
       $or: [{ email: emailOrPhone }, { phoneNumber: emailOrPhone }],
@@ -84,7 +88,6 @@ exports.login = async (req, res) => {
       return res.status(403).json({ message: "Please verify your email first" });
     }
 
-    // ✅ Session modes
     let expiresIn = "24h"; // default
     if (mode === "passwordFree") expiresIn = "30d";
     else if (mode === "strict") expiresIn = "1h";
@@ -182,6 +185,91 @@ exports.resetPassword = async (req, res) => {
     await user.save();
 
     res.json({ message: "Password reset successful" });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// --------------------
+// Forgot PIN
+// --------------------
+exports.forgotPin = async (req, res) => {
+  try {
+    const { emailOrPhone } = req.body;
+
+    const user = await User.findOne({
+      $or: [{ email: emailOrPhone }, { phoneNumber: emailOrPhone }],
+    });
+
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const resetExpires = new Date(Date.now() + 15 * 60 * 1000);
+
+    user.resetPinCode = resetCode;
+    user.resetPinExpires = resetExpires;
+    await user.save();
+
+    if (user.email) {
+      await sendResetPinEmail(user.email, user.fullName, resetCode);
+    }
+
+    res.json({ message: "PIN reset code sent successfully" });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// --------------------
+// Verify PIN Reset Code
+// --------------------
+exports.verifyPinResetCode = async (req, res) => {
+  try {
+    const { emailOrPhone, code } = req.body;
+
+    const user = await User.findOne({
+      $or: [{ email: emailOrPhone }, { phoneNumber: emailOrPhone }],
+    });
+
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    if (!user.resetPinCode || user.resetPinCode !== code || user.resetPinExpires < Date.now()) {
+      return res.status(400).json({ message: "Invalid or expired reset code" });
+    }
+
+    res.json({ message: "Code verified. You can now reset your PIN." });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// --------------------
+// Reset PIN
+// --------------------
+exports.resetPin = async (req, res) => {
+  try {
+    const { emailOrPhone, code, newPin } = req.body;
+
+    const user = await User.findOne({
+      $or: [{ email: emailOrPhone }, { phoneNumber: emailOrPhone }],
+    });
+
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    if (!user.resetPinCode || user.resetPinCode !== code || user.resetPinExpires < Date.now()) {
+      return res.status(400).json({ message: "Invalid or expired reset code" });
+    }
+
+    user.pin = newPin; // make sure User schema hashes this!
+    user.resetPinCode = null;
+    user.resetPinExpires = null;
+    await user.save();
+
+    if (user.email) {
+      await sendPinResetSuccessEmail(user.email, user.fullName);
+    }
+
+    res.json({ message: "Transaction PIN reset successful" });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

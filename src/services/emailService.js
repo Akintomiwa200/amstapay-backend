@@ -83,7 +83,6 @@ exports.sendVerificationCodeEmail = async (to, fullName, code) => {
   });
 };
 
-
 /**
  * Sends a reset password email for AmstaPay.
  * @param {string} to - User's email
@@ -99,29 +98,26 @@ exports.sendResetPasswordEmail = async (to, name, token) => {
 
       <!-- Header -->
       <div style="background-color: #f97316; color: white; text-align: center; padding: 40px 20px;">
-        <h1 style="margin: 0; font-size: 28px; font-weight: bold;">Reset Your AmstaPay Password 🔑</h1>
-        <p style="margin: 10px 0 0; font-size: 16px;">Secure • Fast • Reliable Payments</p>
+        <h1 style="margin: 0; font-size: 26px; font-weight: bold;">Reset Your Password 🔑</h1>
+        <p style="margin: 10px 0 0; font-size: 15px;">For your AmstaPay account</p>
       </div>
 
       <!-- Body -->
       <div style="padding: 30px; color: #333;">
-        <h2 style="font-size: 22px; margin-top: 0;">Hi ${name},</h2>
-        <p style="font-size: 16px; line-height: 1.6;">
-          We received a request to reset your AmstaPay account password associated with <strong>${to}</strong>.
+        <h2 style="font-size: 20px; margin-top: 0;">Hi ${name},</h2>
+        <p style="font-size: 15px; line-height: 1.6;">
+          We received a request to reset your <strong>AmstaPay</strong> password. Click the button below to set a new one.
         </p>
 
-        <p style="font-size: 16px; line-height: 1.6;">
-          Click the button below to reset your password. This link is valid for <b>15 minutes</b>.
-        </p>
-
-        <div style="text-align: center; margin: 40px 0;">
+        <!-- Reset Button -->
+        <div style="text-align: center; margin: 35px 0;">
           <a href="${resetUrl}" style="
             display: inline-block;
             background-color: #f97316;
             color: #ffffff;
-            font-size: 18px;
+            font-size: 16px;
             font-weight: bold;
-            padding: 15px 30px;
+            padding: 14px 28px;
             border-radius: 8px;
             text-decoration: none;
             box-shadow: 0 4px 8px rgba(0,0,0,0.15);
@@ -130,24 +126,21 @@ exports.sendResetPasswordEmail = async (to, name, token) => {
           </a>
         </div>
 
-        <p style="font-size: 14px; color: #555; line-height: 1.6;">
-          If you didn't request a password reset, you can safely ignore this email and your password will remain unchanged.
+        <p style="font-size: 13px; color: #555; line-height: 1.6;">
+          ⚠️ This link is valid for <b>15 minutes</b>. If you didn’t request this reset, please ignore this email.
         </p>
 
         <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;" />
-
-        <p style="font-size: 13px; color: #999; text-align: center;">
+        <p style="font-size: 12px; color: #999; text-align: center;">
           Need help? Contact our support team anytime at 
           <a href="mailto:support@amstapay.com" style="color:#f97316; text-decoration:none;">support@amstapay.com</a>
         </p>
       </div>
 
       <!-- Footer -->
-      <div style="background-color: #fafafa; color: #888; text-align: center; padding: 20px; font-size: 12px;">
+      <div style="background-color: #fafafa; color: #888; text-align: center; padding: 18px; font-size: 12px;">
         <p style="margin: 5px 0;">© ${new Date().getFullYear()} AmstaPay Inc. All rights reserved.</p>
-        <p style="margin: 0;">123 Payment Lane, Lagos, Nigeria</p>
       </div>
-
     </div>
   </div>
   `;
@@ -156,6 +149,130 @@ exports.sendResetPasswordEmail = async (to, name, token) => {
     from: `"AmstaPay" <${process.env.EMAIL_USER}>`,
     to,
     subject: "Reset Your AmstaPay Password",
+    html: htmlContent,
+  });
+};
+
+/**
+ * Sends a reset PIN email for AmstaPay.
+ * @param {string} to - User's email
+ * @param {string} name - User's full name
+ * @param {string} token - Reset PIN token
+ */
+exports.sendResetPinEmail = async (to, name, token) => {
+  const resetUrl = `${process.env.CLIENT_URL}/reset-pin/${token}`;
+
+  const htmlContent = `
+  <div style="font-family: Arial, sans-serif; background-color: #f4f4f7; padding: 20px;">
+    <div style="max-width: 600px; margin: auto; background: #ffffff; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+
+      <!-- Header -->
+      <div style="background-color: #2563eb; color: white; text-align: center; padding: 40px 20px;">
+        <h1 style="margin: 0; font-size: 26px; font-weight: bold;">Reset Your Transaction PIN 🔒</h1>
+        <p style="margin: 10px 0 0; font-size: 15px;">Keep your AmstaPay wallet secure</p>
+      </div>
+
+      <!-- Body -->
+      <div style="padding: 30px; color: #333;">
+        <h2 style="font-size: 20px; margin-top: 0;">Hi ${name},</h2>
+        <p style="font-size: 15px; line-height: 1.6;">
+          We received a request to reset your <strong>AmstaPay transaction PIN</strong>. 
+          Use the button below to set a new 4-digit PIN.
+        </p>
+
+        <!-- Reset Button -->
+        <div style="text-align: center; margin: 35px 0;">
+          <a href="${resetUrl}" style="
+            display: inline-block;
+            background-color: #2563eb;
+            color: #ffffff;
+            font-size: 16px;
+            font-weight: bold;
+            padding: 14px 28px;
+            border-radius: 8px;
+            text-decoration: none;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+          ">
+            Reset PIN
+          </a>
+        </div>
+
+        <p style="font-size: 13px; color: #555; line-height: 1.6;">
+          ⚠️ This link will expire in <b>15 minutes</b>. If you didn’t request this reset, you can ignore this email.
+        </p>
+
+        <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;" />
+        <p style="font-size: 12px; color: #999; text-align: center;">
+          Need help? Contact our support team anytime at 
+          <a href="mailto:support@amstapay.com" style="color:#2563eb; text-decoration:none;">support@amstapay.com</a>
+        </p>
+      </div>
+
+      <!-- Footer -->
+      <div style="background-color: #fafafa; color: #888; text-align: center; padding: 18px; font-size: 12px;">
+        <p style="margin: 5px 0;">© ${new Date().getFullYear()} AmstaPay Inc. All rights reserved.</p>
+      </div>
+    </div>
+  </div>
+  `;
+
+  await transporter.sendMail({
+    from: `"AmstaPay" <${process.env.EMAIL_USER}>`,
+    to,
+    subject: "Reset Your AmstaPay Transaction PIN",
+    html: htmlContent,
+  });
+};
+
+
+/**
+ * Sends a confirmation email after a successful PIN reset.
+ * @param {string} to - User's email
+ * @param {string} name - User's full name
+ */
+exports.sendPinResetSuccessEmail = async (to, name) => {
+  const htmlContent = `
+  <div style="font-family: Arial, sans-serif; background-color: #f4f4f7; padding: 20px;">
+    <div style="max-width: 600px; margin: auto; background: #ffffff; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+
+      <!-- Header -->
+      <div style="background-color: #16a34a; color: white; text-align: center; padding: 40px 20px;">
+        <h1 style="margin: 0; font-size: 26px; font-weight: bold;">Transaction PIN Updated ✅</h1>
+        <p style="margin: 10px 0 0; font-size: 15px;">Security confirmation from AmstaPay</p>
+      </div>
+
+      <!-- Body -->
+      <div style="padding: 30px; color: #333;">
+        <h2 style="font-size: 20px; margin-top: 0;">Hi ${name},</h2>
+        <p style="font-size: 15px; line-height: 1.6;">
+          This is a confirmation that your <strong>AmstaPay transaction PIN</strong> was successfully updated.
+        </p>
+
+        <p style="font-size: 15px; line-height: 1.6;">
+          If <strong>you made this change</strong>, no further action is needed.  
+          If <strong>you did not request this change</strong>, please contact 
+          <a href="mailto:support@amstapay.com" style="color:#16a34a; text-decoration:none;">support@amstapay.com</a> immediately.
+        </p>
+
+        <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;" />
+        <p style="font-size: 12px; color: #999; text-align: center;">
+          Need help? Our support team is always available at 
+          <a href="mailto:support@amstapay.com" style="color:#16a34a; text-decoration:none;">support@amstapay.com</a>
+        </p>
+      </div>
+
+      <!-- Footer -->
+      <div style="background-color: #fafafa; color: #888; text-align: center; padding: 18px; font-size: 12px;">
+        <p style="margin: 5px 0;">© ${new Date().getFullYear()} AmstaPay Inc. All rights reserved.</p>
+      </div>
+    </div>
+  </div>
+  `;
+
+  await transporter.sendMail({
+    from: `"AmstaPay" <${process.env.EMAIL_USER}>`,
+    to,
+    subject: "Your AmstaPay Transaction PIN Was Updated",
     html: htmlContent,
   });
 };

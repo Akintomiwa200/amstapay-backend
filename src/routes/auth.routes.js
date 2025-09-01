@@ -5,6 +5,7 @@ const {
   verifyEmail,
   forgotPassword,
   resetPassword,
+  changePin,
 } = require("../controllers/authController");
 
 const router = express.Router();
@@ -46,6 +47,7 @@ const upload = multer({ dest: "uploads/" });
  *               gender: { type: string, example: Male }
  *               residentialAddress: { type: string, example: 123 Main St, Lagos }
  *               bvnOrNin: { type: string, example: 12345678901 }
+ *               pin: { type: string, example: "1234", description: "4-digit transaction PIN" }
  *               businessName: { type: string, example: Doe Enterprises }
  *               businessAddress: { type: string, example: 456 Market St, Lagos }
  *               businessType: { type: string, example: Kiosk }
@@ -98,6 +100,37 @@ router.post("/signup", signup);
  *         description: Invalid credentials
  */
 router.post("/login", login);
+/**
+ * @swagger
+ * /auth/change-pin:
+ *   post:
+ *     summary: Change transaction PIN
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - currentPin
+ *               - newPin
+ *             properties:
+ *               currentPin:
+ *                 type: string
+ *                 example: "1234"
+ *               newPin:
+ *                 type: string
+ *                 example: "5678"
+ *     responses:
+ *       200:
+ *         description: PIN changed successfully
+ *       400:
+ *         description: Current PIN is incorrect
+ */
+router.post("/change-pin", authMiddleware, changePin);
 
 /**
  * @swagger

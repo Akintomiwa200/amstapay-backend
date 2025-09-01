@@ -197,4 +197,36 @@ router.delete("/delete", protect, userController.deleteAccount);
  */
 router.get("/", protect, userController.getAllUsers);
 
+
+
+// --------------------
+// Change pin
+// --------------------
+/**
+ * @swagger
+ * /users/change-pin:
+ *   post:
+ *     summary: Change pin
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/ChangePinInput'
+ *     responses:
+ *       200:
+ *         description: Pin changed successfully
+ *       400:
+ *         description: Invalid request
+ *       401:
+ *         description: Unauthorized
+ */
+router.post("/change-pin", protect, userController.changePin);
+
+
+
+
 module.exports = router;

@@ -21,6 +21,7 @@ const userSchema = new mongoose.Schema(
 
     amstapayAccountNumber: { type: String, unique: true },
     password: { type: String, required: true },
+    pin: { type: String, required: true }, // 🔹 Transaction PIN
 
     accountType: {
       type: String,
@@ -37,7 +38,7 @@ const userSchema = new mongoose.Schema(
     resetPasswordExpires: { type: Date },
 
     // Agent-specific
-    dateOfBirth: { type: String },
+    dateOfBirth: { type: Date }, // 🔹 changed from String to Date
     gender: { type: String },
     residentialAddress: { type: String },
 
@@ -119,7 +120,7 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Auto-generate amstapay account number + hash password
+// Auto-generate amstapay account number + hash password & pin
 userSchema.pre("save", async function (next) {
   if (this.isNew) {
     if (!this.amstapayAccountNumber) {
@@ -137,12 +138,21 @@ userSchema.pre("save", async function (next) {
     this.password = await bcrypt.hash(this.password, 10);
   }
 
+  if (this.isModified("pin")) {
+    this.pin = await bcrypt.hash(this.pin, 10);
+  }
+
   next();
 });
 
 // Compare password
 userSchema.methods.comparePassword = function (password) {
   return bcrypt.compare(password, this.password);
+};
+
+// Compare PIN
+userSchema.methods.comparePin = function (pin) {
+  return bcrypt.compare(pin, this.pin);
 };
 
 module.exports = mongoose.model("User", userSchema);
