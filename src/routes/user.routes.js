@@ -3,7 +3,8 @@ const express = require("express");
 const router = express.Router();
 const userController = require("../controllers/userController");
 const { protect } = require("../middleware/auth"); // <-- import protect
-
+const upload = require("../middleware/upload"); 
+ 
 
 // ==============================
 // Swagger Tag: Users
@@ -226,6 +227,49 @@ router.get("/", protect, userController.getAllUsers);
  */
 router.post("/change-pin", protect, userController.changePin);
 
+/**
+ * @swagger
+ * /users/avatar:
+ *   post:
+ *     summary: Upload user profile image
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               avatar:
+ *                 type: string
+ *                 format: binary
+ *                 description: The image file to upload
+ *     responses:
+ *       200:
+ *         description: Profile image uploaded successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Profile image updated"
+ *                 avatar:
+ *                   type: string
+ *                   example: "/uploads/avatars/64f1c2b6d4b7e8a9c0e1a123_1696115200000.jpg"
+ *                 user:
+ *                   $ref: '#/components/schemas/User'
+ *       400:
+ *         description: No file uploaded or invalid file
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Server error
+ */
+router.post("/avatar", protect, upload.single("avatar"), userController.uploadAvatar);
 
 
 

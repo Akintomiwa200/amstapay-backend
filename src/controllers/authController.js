@@ -6,6 +6,7 @@ const {
   sendResetPinEmail,
   sendPinResetSuccessEmail
 } = require("../services/emailService");
+const Wallet = require("../models/Wallet");
 
 
 // --------------------
@@ -78,6 +79,15 @@ exports.signup = async (req, res) => {
     });
 
     await user.save();
+
+    // ✅ Create wallet automatically for the new user
+const wallet = new Wallet({
+  user: user._id,
+  balance: 0,
+});
+await wallet.save();
+
+
     await sendVerificationCodeEmail(email, fullName, verificationCode);
 
     res.status(201).json({ message: "Signup successful, verification code sent to email" });

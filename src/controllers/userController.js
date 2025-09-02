@@ -1,3 +1,6 @@
+// controllers/userController.js
+const fs = require("fs");
+const path = require("path");
 const User = require("../models/User");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
@@ -124,6 +127,38 @@ exports.deleteAccount = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
+// Upload avatar
+exports.uploadAvatar = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: "No file uploaded" });
+    }
+
+    // Convert buffer to base64 or save to public folder
+    const avatarPath = `/uploads/avatars/${req.user._id}_${Date.now()}.jpg`;
+    const fullPath = path.join(__dirname, "..", "public", avatarPath);
+
+    // Make sure folder exists
+    fs.mkdirSync(path.dirname(fullPath), { recursive: true });
+
+    fs.writeFileSync(fullPath, req.file.buffer);
+
+    // Update user
+    const user = await User.findByIdAndUpdate(
+      req.user._id,
+      { passportPhoto: avatarPath }, // store file path in DB
+      { new: true }
+    ).select("-password -pin");
+
+    res.json({ message: "Profile image updated", avatar: avatarPath, user });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to upload avatar" });
+  }
+};
+
+
 
 // Admin only: Get all users
 exports.getAllUsers = async (req, res) => {
