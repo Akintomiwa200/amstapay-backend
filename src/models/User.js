@@ -20,8 +20,10 @@ const userSchema = new mongoose.Schema(
     phoneNumber: { type: String, unique: true, sparse: true },
 
     amstapayAccountNumber: { type: String, unique: true },
-    pin: { type: String, required: true, minlength: 4, maxlength: 6 },
-    password: { type: String, required: true, minlength: 6 },
+
+    // Remove minlength/maxlength; we hash PIN
+    pin: { type: String, required: true },
+    password: { type: String, required: true },
 
     accountType: {
       type: String,
@@ -29,13 +31,11 @@ const userSchema = new mongoose.Schema(
       required: true,
     },
 
-
     verificationCode: { type: String },
     codeExpires: { type: Date },
     isVerified: { type: Boolean, default: false },
 
-
-    // 🔹 OTP verification
+    // OTP verification
     isOtpVerified: { type: Boolean, default: false },
     otpCode: { type: String },
     otpExpires: { type: Date },
@@ -44,7 +44,7 @@ const userSchema = new mongoose.Schema(
     resetPasswordExpires: { type: Date },
 
     // Agent-specific
-    dateOfBirth: { type: Date }, // 🔹 changed from String to Date
+    dateOfBirth: { type: Date },
     gender: { type: String },
     residentialAddress: { type: String },
 
@@ -88,7 +88,7 @@ const userSchema = new mongoose.Schema(
       },
     },
 
-    // Agent (Guarantor info required only for agent)
+    // Agent
     guarantorName: {
       type: String,
       required: function () {
@@ -114,31 +114,32 @@ const userSchema = new mongoose.Schema(
       },
     },
 
+    // Documents (base64 or file path)
+    idDocument: { type: String },
+    utilityBill: { type: String },
+    passportPhoto: { type: String },
+
     // Consent
     termsAgreed: { type: Boolean },
     infoAccurate: { type: Boolean },
     verificationConsent: { type: Boolean },
 
-    // 🔹 KYC
+    // KYC
     verifications: [verificationSchema],
     kycLevel: { type: Number, default: 0 },
   },
-
-
   { timestamps: true }
 );
 
-// Auto-generate amstapay account number + hash password & pin
+// --------------------
+// Pre-save: generate account number + hash password & pin
+// --------------------
 userSchema.pre("save", async function (next) {
   if (this.isNew) {
     if (!this.amstapayAccountNumber) {
-      if (this.phoneNumber) {
-        this.amstapayAccountNumber = this.phoneNumber.replace(/^0/, "");
-      } else {
-        this.amstapayAccountNumber = Math.floor(
-          1000000000 + Math.random() * 9000000000
-        ).toString();
-      }
+      this.amstapayAccountNumber = this.phoneNumber
+        ? this.phoneNumber.replace(/^0/, "")
+        : Math.floor(1000000000 + Math.random() * 9000000000).toString();
     }
   }
 
@@ -153,12 +154,16 @@ userSchema.pre("save", async function (next) {
   next();
 });
 
+// --------------------
 // Compare password
+// --------------------
 userSchema.methods.comparePassword = function (password) {
   return bcrypt.compare(password, this.password);
 };
 
+// --------------------
 // Compare PIN
+// --------------------
 userSchema.methods.comparePin = function (pin) {
   return bcrypt.compare(pin, this.pin);
 };
