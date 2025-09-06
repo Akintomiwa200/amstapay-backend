@@ -6,97 +6,39 @@ const {
   sendResetPinEmail,
   sendPinResetSuccessEmail
 } = require("../services/emailService");
-const Wallet = require("../models/Wallet");
-
 
 // --------------------
 // Signup
 // --------------------
 exports.signup = async (req, res) => {
+  const { fullName, email, phoneNumber, password, accountType, ...rest } = req.body;
+
   try {
-    const { 
-      fullName,
-      email,
-      phoneNumber,
-      password,
-      pin,
-      accountType,
-      dateOfBirth,
-      ...rest 
-    } = req.body;
-
-    // ✅ Convert DOB if provided
-    let dob = null;
-    if (dateOfBirth) {
-      dob = new Date(dateOfBirth);
-      if (isNaN(dob.getTime())) {
-        return res.status(400).json({ error: "Invalid dateOfBirth format. Use YYYY-MM-DD" });
-      }
-    }
-
-    // ✅ Check if user already exists
     const existingUser = await User.findOne({ $or: [{ email }, { phoneNumber }] });
     if (existingUser) return res.status(400).json({ error: "Email or phone already in use" });
 
-    // ✅ Validate required fields based on accountType
-    if (["business", "enterprise", "company"].includes(accountType)) {
-      const requiredBiz = ["businessName", "businessAddress", "businessType", "bankName", "accountName", "accountNumber"];
-      for (let field of requiredBiz) {
-        if (!rest[field]) {
-          return res.status(400).json({ error: `${field} is required for ${accountType} accounts` });
-        }
-      }
-    }
-
-    if (accountType === "agent") {
-      const requiredAgent = ["guarantorName", "guarantorRelationship", "guarantorPhone", "guarantorAddress"];
-      for (let field of requiredAgent) {
-        if (!rest[field]) {
-          return res.status(400).json({ error: `${field} is required for agent accounts` });
-        }
-      }
-    }
-
-    // ✅ Generate verification code
     const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
     const codeExpires = new Date(Date.now() + 10 * 60 * 1000);
 
-    // ✅ Create user
     const user = new User({
       fullName,
       email,
       phoneNumber,
       password,
-      pin,
       accountType,
-      dateOfBirth: dob,
       verificationCode,
       codeExpires,
       ...rest,
-      idDocument: rest.idDocument || null,
-      utilityBill: rest.utilityBill || null,
-      passportPhoto: rest.passportPhoto || null,
     });
 
     await user.save();
-
-    // ✅ Create wallet automatically for the new user
-const wallet = new Wallet({
-  user: user._id,
-  balance: 0,
-});
-await wallet.save();
-
-
     await sendVerificationCodeEmail(email, fullName, verificationCode);
 
     res.status(201).json({ message: "Signup successful, verification code sent to email" });
   } catch (err) {
-    console.error("❌ Signup Error:", err);
     res.status(500).json({ error: err.message });
   }
 };
-
 
 // --------------------
 // Verify Email
