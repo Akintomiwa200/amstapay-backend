@@ -36,6 +36,21 @@ const colors = {
   bgWhite: "\x1b[47m"
 };
 
+// Function to get local IP address
+const getLocalIP = () => {
+  const { networkInterfaces } = require('os');
+  const nets = networkInterfaces();
+  
+  for (const name of Object.keys(nets)) {
+    for (const net of nets[name]) {
+      if (net.family === 'IPv4' && !net.internal) {
+        return net.address;
+      }
+    }
+  }
+  return 'localhost';
+};
+
 // Function to draw a horizontal line
 const drawLine = (char = "═", length = 60) => {
   return colors.dim + char.repeat(length) + colors.reset;
@@ -52,18 +67,18 @@ const centerText = (text, width = 60) => {
 // Function to print a beautiful banner
 const printBanner = () => {
   const banner = `
-${colors.cyan}${colors.bright}   ▄▄▄▄▄▄▄▄▄▄▄  ▄▄▄▄▄▄▄▄▄▄▄  ▄▄▄▄▄▄▄▄▄▄▄  ▄▄▄▄▄▄▄▄▄▄▄ 
-  ▐░░░░░░░░░░░▌▐░░░░░░░░░░░▌▐░░░░░░░░░░░▌▐░░░░░░░░░░░▌
-  ▐░█▀▀▀▀▀▀▀▀▀ ▐░█▀▀▀▀▀▀▀█░▌▐░█▀▀▀▀▀▀▀█░▌▐░█▀▀▀▀▀▀▀█░▌
-  ▐░▌          ▐░▌       ▐░▌▐░▌       ▐░▌▐░▌       ▐░▌
-  ▐░█▄▄▄▄▄▄▄▄▄ ▐░█▄▄▄▄▄▄▄█░▌▐░▌       ▐░▌▐░▌       ▐░▌
-  ▐░░░░░░░░░░░▌▐░░░░░░░░░░░▌▐░▌       ▐░▌▐░▌       ▐░▌
-   ▀▀▀▀▀▀▀▀▀█░▌▐░█▀▀▀▀▀▀▀█░▌▐░▌       ▐░▌▐░▌       ▐░▌
-            ▐░▌▐░▌       ▐░▌▐░▌       ▐░▌▐░▌       ▐░▌
-   ▄▄▄▄▄▄▄▄▄█░▌▐░▌       ▐░▌▐░█▄▄▄▄▄▄▄█░▌▐░█▄▄▄▄▄▄▄█░▌
-  ▐░░░░░░░░░░░▌▐░▌       ▐░▌▐░░░░░░░░░░░▌▐░░░░░░░░░░░▌
-   ▀▀▀▀▀▀▀▀▀▀▀  ▀         ▀  ▀▀▀▀▀▀▀▀▀▀▀  ▀▀▀▀▀▀▀▀▀▀▀ 
-${colors.reset}
+${colors.cyan}${colors.bright}╔══════════════════════════════════════════════════════════╗
+║                                                          ║
+║   █████╗ ███╗   ███╗███████╗████████╗ █████╗  █████╗     ║
+║  ██╔══██╗████╗ ████║██╔════╝╚══██╔══╝██╔══██╗██╔══██╗    ║
+║  ███████║██╔████╔██║███████╗   ██║   ███████║███████║    ║
+║  ██╔══██║██║╚██╔╝██║╚════██║   ██║   ██╔══██║██╔══██║    ║
+║  ██║  ██║██║ ╚═╝ ██║███████║   ██║   ██║  ██║██║  ██║    ║
+║  ╚═╝  ╚═╝╚═╝     ╚═╝╚══════╝   ╚═╝   ╚═╝  ╚═╝╚═╝  ╚═╝    ║
+║                                                          ║
+║                   ${colors.yellow}${colors.bright}DEVELOPMENT MODE${colors.reset}${colors.cyan}                   ║
+║                                                          ║
+╚══════════════════════════════════════════════════════════╝${colors.reset}
   `;
   console.log(banner);
 };
@@ -103,8 +118,8 @@ const printServerInfo = () => {
     " ".repeat(width - 27) + colors.dim + "│" + colors.reset);
   console.log(colors.dim + "│" + colors.reset + "   " + 
     colors.blue + "➜  Swagger UI:" + colors.reset + " " + 
-    colors.underline + `http://localhost:${PORT}/docs` + colors.reset +
-    " ".repeat(width - 34 - String(PORT).length) + colors.dim + "│" + colors.reset);
+    colors.underline + `http://localhost:${PORT}/api-docs` + colors.reset +
+    " ".repeat(width - 37 - String(PORT).length) + colors.dim + "│" + colors.reset);
   
   console.log(colors.dim + "│" + colors.reset + "   " + 
     colors.blue + "➜  API Explorer:" + colors.reset + " " + 
@@ -138,22 +153,6 @@ const printServerInfo = () => {
   console.log(colors.dim + "└" + "─".repeat(width) + "┘" + colors.reset);
 };
 
-// Function to get local IP address
-const getLocalIP = () => {
-  const { networkInterfaces } = require('os');
-  const nets = networkInterfaces();
-  
-  for (const name of Object.keys(nets)) {
-    for (const net of nets[name]) {
-      // Skip over non-IPv4 and internal (i.e., 127.0.0.1) addresses
-      if (net.family === 'IPv4' && !net.internal) {
-        return net.address;
-      }
-    }
-  }
-  return 'localhost';
-};
-
 // Function to print feature list
 const printFeatures = () => {
   const width = 58;
@@ -163,7 +162,7 @@ const printFeatures = () => {
     { icon: "📱", text: "Cross-Platform Mobile Support", color: colors.cyan },
     { icon: "🔄", text: "Real-time Transaction Updates", color: colors.magenta },
     { icon: "👛", text: "Digital Wallet Management", color: colors.blue },
-    { icon: "🌐", text: "Web3 Payment Integration", color: colors.purple || colors.magenta },
+    { icon: "🌐", text: "Web3 Payment Integration", color: colors.magenta },
     { icon: "📊", text: "Transaction History & Analytics", color: colors.yellow },
     { icon: "🔔", text: "Push Notifications", color: colors.red }
   ];
@@ -194,8 +193,8 @@ const printEndpoints = () => {
     { method: "GET",  path: "/api/v1/users/profile", desc: "Get Profile" },
     { method: "POST", path: "/api/v1/transactions/send", desc: "Send Money" },
     { method: "GET",  path: "/api/v1/transactions/history", desc: "Transaction History" },
-    { method: "GET",  path: "/api/v1/wallet/balance", desc: "Check Balance" },
-    { method: "POST", path: "/api/v1/wallet/fund", desc: "Fund Wallet" }
+    { method: "GET",  path: "/api/v1/wallets/balance", desc: "Check Balance" },
+    { method: "POST", path: "/api/v1/wallets/fund", desc: "Fund Wallet" }
   ];
   
   const methodColors = {
@@ -232,7 +231,6 @@ const showStartupAnimation = async () => {
     i = (i + 1) % frames.length;
   }, 80);
   
-  // Simulate loading time
   await new Promise(resolve => setTimeout(resolve, 1500));
   clearInterval(interval);
   process.stdout.write("\r" + " ".repeat(50) + "\r");
@@ -271,8 +269,11 @@ const startServer = async () => {
       console.log(colors.dim + "  " + colors.reset + 
         "   • Press " + colors.yellow + "Ctrl + C" + colors.reset + " to stop the server");
       console.log(colors.dim + "  " + colors.reset + 
-        "   • Open " + colors.underline + "http://localhost:" + PORT + "/docs" + colors.reset + 
+        "   • Open " + colors.underline + "http://localhost:" + PORT + "/api-docs" + colors.reset + 
         " for interactive API documentation");
+      console.log(colors.dim + "  " + colors.reset + 
+        "   • Visit " + colors.underline + "http://localhost:" + PORT + "/api/v1" + colors.reset + 
+        " for API information");
       console.log(colors.dim + "  " + colors.reset + 
         "   • Use " + colors.yellow + "npm run dev" + colors.reset + 
         " for hot-reload during development");

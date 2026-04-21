@@ -38,7 +38,7 @@ try {
 } catch (err) {
   console.error("❌ Error loading transaction routes:", err.message);
   console.error("Full error:", err);
-  process.exit(1); // Exit if transaction routes fail to load
+  process.exit(1);
 }
 
 try {
@@ -70,16 +70,40 @@ app.get("/health", (req, res) => {
   res.json({ status: "ok", message: "Amstapay API is running 🚀" });
 });
 
-// ===== Mount routes =====
-console.log("🛣️  Setting up routes...");
-if (authRoutes) app.use("/api/auth", authRoutes);
-if (paymentRoutes) app.use("/api/payments", paymentRoutes);
-if (walletRoutes) app.use("/api/wallets", walletRoutes);
-if (transactionRoutes) app.use("/api/transactions", transactionRoutes);
-if (userRoutes) app.use("/api/users", userRoutes);
-if (webhookRoutes) app.use("/api/webhook", webhookRoutes); // ✅ NEW webhook mount
+// API base version path
+const API_VERSION = "/api/v1";
 
-console.log("🎯 All routes configured");
+// ===== Mount routes with version prefix =====
+console.log("🛣️  Setting up routes with base path:", API_VERSION);
+if (authRoutes) app.use(`${API_VERSION}/auth`, authRoutes);
+if (paymentRoutes) app.use(`${API_VERSION}/payments`, paymentRoutes);
+if (walletRoutes) app.use(`${API_VERSION}/wallets`, walletRoutes);
+if (transactionRoutes) app.use(`${API_VERSION}/transactions`, transactionRoutes);
+if (userRoutes) app.use(`${API_VERSION}/users`, userRoutes);
+if (webhookRoutes) app.use(`${API_VERSION}/webhook`, webhookRoutes);
+
+// Also keep backward compatibility for webhook (often needs raw body)
+if (webhookRoutes) app.use("/api/webhook", webhookRoutes);
+
+console.log("🎯 All routes configured with versioning");
+
+// Simple API info endpoint
+app.get(API_VERSION, (req, res) => {
+  res.json({
+    name: "Amstapay API",
+    version: "v1",
+    status: "active",
+    endpoints: {
+      auth: `${API_VERSION}/auth`,
+      payments: `${API_VERSION}/payments`,
+      wallets: `${API_VERSION}/wallets`,
+      transactions: `${API_VERSION}/transactions`,
+      users: `${API_VERSION}/users`,
+      webhook: `${API_VERSION}/webhook`,
+      documentation: "/docs"
+    }
+  });
+});
 
 // ===== 404 handler =====
 app.use((req, res, next) => {
