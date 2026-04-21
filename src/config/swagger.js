@@ -14,8 +14,8 @@ const options = {
       },
     },
     servers: [
-      { url: `http://localhost:${process.env.PORT || 3000}/api`, description: "Local development server" },
-      { url: "https://amstapay-backend.onrender.com/api", description: "Production server" },
+      { url: `http://localhost:${process.env.PORT || 3000}/api/v1`, description: "Local dev" },
+      { url: "https://amstapay-backend.onrender.com/api/v1", description: "Production server" },
     ],
     components: {
       securitySchemes: {
@@ -67,7 +67,7 @@ const swaggerSpec = swaggerJsdoc(options);
 
 function swaggerDocs(app) {
   // Serve Swagger UI at /docs
-  app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+  app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
   
   // Optionally, serve raw JSON spec at /docs.json
   app.get("/docs.json", (req, res) => {
