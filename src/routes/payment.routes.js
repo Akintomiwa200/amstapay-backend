@@ -41,7 +41,15 @@ const { protect } = require("../middleware/auth"); // <-- import protect
  *       200:
  *         description: Payment sent successfully
  */
-router.post("/send",protect, paymentController.sendPayment);
+const rateLimit = require('../middleware/rateLimit');
+const { validatePayment, validate } = require('../middleware/validation');
+
+router.post("/send", protect, 
+  rateLimit.paymentLimiter,
+  validatePayment,
+  validate,
+  paymentController.sendPayment
+);
 
 // Receive money via QR
 /**

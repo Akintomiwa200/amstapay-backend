@@ -5,7 +5,7 @@
   console.log("🚀 Starting Amstapay API...");
 
   // ===== Load routes with debugging =====
-  let authRoutes, paymentRoutes, walletRoutes, transactionRoutes, userRoutes, webhookRoutes;
+  let authRoutes, paymentRoutes, walletRoutes, transactionRoutes, userRoutes, webhookRoutes, bankRoutes, giftcardRoutes, loanRoutes, investRoutes, reportRoutes, billsRoutes;
 
   try {
     console.log("📁 Loading auth routes...");
@@ -40,6 +40,20 @@
     console.error("Full error:", err);
     process.exit(1);
   }
+
+
+  try {
+  bankRoutes = require("./routes/bank.routes");
+  giftcardRoutes = require("./routes/giftcard.routes");
+  loanRoutes = require("./routes/loan.routes");
+  investRoutes = require("./routes/invest.routes");
+  reportRoutes = require("./routes/report.routes");
+  billsRoutes = require("./routes/bills.routes");
+  console.log("✅ New feature routes loaded");
+} catch (err) {
+  console.error("❌ Error loading new routes:", err.message);
+}
+
 
   try {
     console.log("📁 Loading user routes...");
@@ -79,6 +93,12 @@
   if (paymentRoutes) app.use(`${API_VERSION}/payments`, paymentRoutes);
   if (walletRoutes) app.use(`${API_VERSION}/wallets`, walletRoutes);
   if (transactionRoutes) app.use(`${API_VERSION}/transactions`, transactionRoutes);
+  if (bankRoutes) app.use(`${API_VERSION}/bank`, bankRoutes);
+  if (giftcardRoutes) app.use(`${API_VERSION}/giftcards`, giftcardRoutes);
+  if (loanRoutes) app.use(`${API_VERSION}/loans`, loanRoutes);
+  if (investRoutes) app.use(`${API_VERSION}/investments`, investRoutes);
+  if (reportRoutes) app.use(`${API_VERSION}/reports`, reportRoutes);
+  if (billsRoutes) app.use(`${API_VERSION}/bills`, billsRoutes);
   if (userRoutes) app.use(`${API_VERSION}/users`, userRoutes);
   if (webhookRoutes) app.use(`${API_VERSION}/webhook`, webhookRoutes);
 

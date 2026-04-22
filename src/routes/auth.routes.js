@@ -70,7 +70,15 @@ const upload = multer({ dest: "uploads/" });
  *       400:
  *         description: Email or phone already in use
  */
-router.post("/signup", signup);
+const rateLimit = require('../middleware/rateLimit');
+const validation = require('../middleware/validation');
+
+router.post("/signup", 
+  rateLimit.authLimiter, 
+  validation.authSignup, 
+  validation.validate,
+  signup
+);
 
 /**
  * @swagger
@@ -102,7 +110,12 @@ router.post("/signup", signup);
  *       400:
  *         description: Invalid credentials
  */
-router.post("/login", login);
+router.post("/login", 
+  rateLimit.authLimiter, 
+  require('../middleware/validation').authLogin, 
+  require('../middleware/validation').validate,
+  login
+);
 /**
  * @swagger
  * /auth/change-pin:
