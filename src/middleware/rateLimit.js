@@ -21,6 +21,11 @@ exports.publicLimiter = createLimiter(60 * 1000, 200);
 
 // Apply
 exports.applyRateLimits = (app) => {
+  if (process.env.NODE_ENV === 'development') {
+    console.log('⚠️ Rate limiting disabled in development');
+    return;
+  }
+
   app.use(exports.globalLimiter);
   console.log('🛡️ Rate limiting enabled globally');
 };

@@ -74,7 +74,6 @@ const rateLimit = require('../middleware/rateLimit');
 const validation = require('../middleware/validation');
 
 router.post("/signup", 
-  rateLimit.authLimiter, 
   validation.authSignup, 
   validation.validate,
   signup
@@ -111,7 +110,6 @@ router.post("/signup",
  *         description: Invalid credentials
  */
 router.post("/login", 
-  rateLimit.authLimiter, 
   require('../middleware/validation').authLogin, 
   require('../middleware/validation').validate,
   login
