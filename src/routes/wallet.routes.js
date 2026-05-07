@@ -278,6 +278,6 @@ router.post("/currencies/fund", protect, walletController.fundCurrencyWallet);
  *       200:
  *         description: Currency wallet withdrawal successful
  */
-router.post("/currencies/withdraw", protect, walletController.withdrawCurrencyWallet);
+router.post("/currencies/withdraw", protect, checkSuspicious, requirePin("withdraw_currency"), walletController.withdrawCurrencyWallet);
 
 module.exports = router;

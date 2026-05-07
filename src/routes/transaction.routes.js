@@ -168,26 +168,6 @@ router.get("/:id",protect, transactionController.getTransactionById);
  */
 router.patch("/:id/status", protect, transactionController.updateTransactionStatus);
 
-// Paystack webhook (no auth, but secured via secret header)
-/**
- * @swagger
- * /transactions/webhook/paystack:
- *   post:
- *     summary: Paystack webhook for transaction events
- *     tags: [Transactions]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *     responses:
- *       200:
- *         description: Webhook received successfully
- */
-router.post("/webhook/paystack", transactionController.handlePaystackWebhook);
-
-
 // ==============================
 // Export Router
 // ==============================

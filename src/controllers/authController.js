@@ -168,6 +168,9 @@ exports.forgotPassword = async (req, res) => {
     await user.save();
 
     if (user.email) await sendVerificationCodeEmail(user.email, user.fullName, resetCode);
+    if (user.phoneNumber) {
+      await sendOTP({ userId: user._id, email: user.email, phone: user.phoneNumber, fullName: user.fullName, code: resetCode });
+    }
     await audit("forgot_password")(req, user);
     res.json({ message: "Password reset code sent successfully" });
   } catch (err) {
@@ -183,6 +186,9 @@ exports.verifyResetCode = async (req, res) => {
     if (!user.resetPasswordCode || String(user.resetPasswordCode) !== String(code) || user.resetPasswordExpires < Date.now()) {
       return res.status(400).json({ message: "Invalid or expired reset code" });
     }
+    user.resetPasswordCode = null;
+    user.resetPasswordExpires = null;
+    await user.save();
     res.json({ message: "Code verified. You can now reset your password." });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -225,6 +231,9 @@ exports.forgotPin = async (req, res) => {
     await user.save();
 
     if (user.email) await sendResetPinEmail(user.email, user.fullName, resetCode);
+    if (user.phoneNumber) {
+      await sendOTP({ userId: user._id, email: user.email, phone: user.phoneNumber, fullName: user.fullName, code: resetCode });
+    }
     await audit("forgot_pin")(req, user);
     res.json({ message: "Verification mail sent successfully" });
   } catch (err) {
@@ -240,6 +249,9 @@ exports.verifyPinResetCode = async (req, res) => {
     if (!user.resetPinCode || String(user.resetPinCode) !== String(code) || user.resetPinExpires < Date.now()) {
       return res.status(400).json({ message: "Invalid or expired reset code" });
     }
+    user.resetPinCode = null;
+    user.resetPinExpires = null;
+    await user.save();
     res.json({ message: "Mail verified successfully. You can now reset your PIN." });
   } catch (err) {
     res.status(500).json({ message: err.message });

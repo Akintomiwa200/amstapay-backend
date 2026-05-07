@@ -2,6 +2,7 @@ const swaggerMiddleware = require("../config/swagger");
 const cors = require("cors");
 const morgan = require("morgan");
 const helmet = require("helmet");
+const compression = require("compression");
 const bodyParser = require("body-parser");
 
 const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS
@@ -10,6 +11,13 @@ const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS
 
 module.exports = (app) => {
   app.set("trust proxy", 1);
+  app.set("etag", "strong");
+  app.set("query parser", "simple");
+
+  app.use(compression({ level: 6, threshold: 256, filter: (req, res) => {
+    if (req.headers["x-no-compression"]) return false;
+    return compression.filter(req, res);
+  }}));
 
   app.use(helmet({
     contentSecurityPolicy: process.env.NODE_ENV !== "production" ? false : undefined,
@@ -27,12 +35,9 @@ module.exports = (app) => {
 
   app.use(cors({
     origin: process.env.NODE_ENV === "production"
-      ? function (origin, callback) {
-          if (!origin || ALLOWED_ORIGINS.indexOf(origin) !== -1) {
-            callback(null, true);
-          } else {
-            callback(new Error("Not allowed by CORS"));
-          }
+      ? (origin, callback) => {
+          if (!origin || ALLOWED_ORIGINS.indexOf(origin) !== -1) callback(null, true);
+          else callback(new Error("Not allowed by CORS"));
         }
       : true,
     credentials: true,
@@ -57,5 +62,5 @@ module.exports = (app) => {
     swaggerMiddleware(app);
   }
 
-  console.log("Security middleware configured");
+  console.log("Scalability & security middleware configured");
 };

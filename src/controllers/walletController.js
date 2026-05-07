@@ -2,6 +2,7 @@ const Wallet = require("../models/Wallet");
 const Transaction = require("../models/Transaction");
 const User = require("../models/User");
 const axios = require("axios");
+const { atomicTransfer } = require("../services/transactionService");
 
 const paystack = axios.create({
   baseURL: "https://api.paystack.co",
@@ -42,20 +43,17 @@ exports.fundWallet = async (req, res) => {
     let wallet = await Wallet.findOne({ user: userId });
     if (!wallet) wallet = await Wallet.create({ user: userId, balance: 0 });
 
-    if (paystackResponse?.status) {
-      wallet.balance += amount;
-      await wallet.save();
-    }
+    // Do NOT credit wallet here — wait for Paystack webhook charge.success
 
     const txn = await Transaction.create({
       sender: userId, type: "fund", amount,
       description: description || "Wallet funded",
-      status: paystackResponse?.status ? "success" : "pending",
+      status: "pending",
       reference, paystackResponse,
     });
 
     res.json({
-      message: paystackResponse?.status ? "Wallet funded successfully" : "Funding initiated",
+      message: "Funding initiated. Wallet will be credited on payment confirmation.",
       balance: wallet.balance,
       authorization_url: paystackResponse?.data?.authorization_url,
       reference, transaction: txn,
@@ -77,6 +75,7 @@ exports.withdrawWallet = async (req, res) => {
 
     const reference = `WDR-${Date.now()}`;
 
+    let paystackSuccess = false;
     try {
       const recipientResp = await paystack.post("/transferrecipient", {
         type: "nuban", name: accountName || req.user.fullName,
@@ -91,12 +90,15 @@ exports.withdrawWallet = async (req, res) => {
         });
 
         if (transferResp.data?.status) {
-          wallet.balance -= amount;
-          await wallet.save();
+          paystackSuccess = true;
         }
       }
     } catch (psErr) {
       console.error("Paystack withdrawal error:", psErr.response?.data || psErr.message);
+    }
+
+    if (!paystackSuccess) {
+      return res.status(502).json({ message: "Paystack transfer failed", balance: wallet.balance });
     }
 
     wallet.balance -= amount;
@@ -120,29 +122,22 @@ exports.transferWallet = async (req, res) => {
     if (!amount || amount <= 0) return res.status(400).json({ message: "Valid amount required" });
 
     const senderId = req.user._id;
-    const senderWallet = await Wallet.findOne({ user: senderId });
-    if (!senderWallet || senderWallet.balance < amount) return res.status(400).json({ message: "Insufficient balance" });
 
     const recipientUser = await User.findOne({ amstapayAccountNumber: recipientAccountNumber });
     if (!recipientUser) return res.status(404).json({ message: "Recipient not found" });
 
-    let recipientWallet = await Wallet.findOne({ user: recipientUser._id });
-    if (!recipientWallet) recipientWallet = await Wallet.create({ user: recipientUser._id, balance: 0 });
-
-    senderWallet.balance -= amount;
-    recipientWallet.balance += amount;
-    await senderWallet.save();
-    await recipientWallet.save();
-
-    await Transaction.create({
-      sender: senderId, type: "normal_transfer", amount,
-      receiver: recipientUser._id,
+    const { transaction, senderWallet } = await atomicTransfer({
+      senderId,
+      receiverId: recipientUser._id,
+      amount,
+      type: "normal_transfer",
       description: description || `Transfer to ${recipientUser.fullName}`,
-      status: "success",
     });
 
-    res.json({ message: "Transfer successful", balance: senderWallet.balance });
+    res.json({ message: "Transfer successful", balance: senderWallet.balance, transaction: transaction });
   } catch (err) {
+    if (err.code === "INSUFFICIENT_BALANCE") return res.status(400).json({ message: "Insufficient balance" });
+    if (err.code === "RECEIVER_NOT_FOUND") return res.status(404).json({ message: "Recipient wallet not found" });
     res.status(500).json({ message: err.message });
   }
 };

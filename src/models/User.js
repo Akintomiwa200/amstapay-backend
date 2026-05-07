@@ -186,6 +186,8 @@ const userSchema = new mongoose.Schema(
 
     deviceToken: { type: String },
 
+    role: { type: String, enum: ["user", "admin"], default: "user" },
+
     twoFactorSecret: { type: String },
     twoFactorEnabled: { type: Boolean, default: false },
 

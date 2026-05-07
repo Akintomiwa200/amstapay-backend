@@ -1,8 +1,6 @@
 const Transaction = require("../models/Transaction");
 const User = require("../models/User");
 const Wallet = require("../models/Wallet");
-const Bill = require("../models/Bill");
-const GiftCard = require("../models/GiftCard");
 const { sendEmail, sendVerificationCodeEmail, sendTransactionAlert } = require("../services/emailService");
 const { sendOTP, sendTransactionAlert: sendSMSAlert } = require("../services/customNotificationService");
 const axios = require("axios");
@@ -350,6 +348,10 @@ const getTransactionById = async (req, res) => {
 
 const updateTransactionStatus = async (req, res) => {
   try {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ success: false, message: "Admin access required to update transaction status" });
+    }
+
     const { status } = req.body;
     const { id } = req.params;
 
@@ -431,177 +433,11 @@ const updateTransactionStatus = async (req, res) => {
   }
 };
 
-const handlePaystackWebhook = async (req, res) => {
-  try {
-    const secret = process.env.PAYSTACK_SECRET_KEY;
-    
-    if (!secret) {
-      console.error("PAYSTACK_SECRET_KEY not configured");
-      return res.status(500).json({ error: "Server configuration error" });
-    }
 
-    const hash = crypto
-      .createHmac("sha512", secret)
-      .update(JSON.stringify(req.body))
-      .digest("hex");
-
-    if (hash !== req.headers["x-paystack-signature"]) {
-      console.error("Invalid Paystack webhook signature");
-      return res.status(401).json({ error: "Invalid signature" });
-    }
-
-    const event = req.body;
-    console.log("🔔 Paystack Event:", event.event, event.data);
-
-    // Handle different event types
-    const { event: eventType, data } = event;
-
-    switch (eventType) {
-      case "charge.success":
-        await handleChargeSuccess(data);
-        break;
-
-      case "transfer.success":
-        await handleTransferSuccess(data);
-        break;
-
-      case "transfer.failed":
-      case "transfer.reversed":
-        await handleTransferFailed(data);
-        break;
-
-      case "paymentrequest.pending":
-      case "paymentrequest.processing":
-        // Just log
-        break;
-
-      case "subscription.disable":
-      case "subscription.not_renew":
-        // Handle subscription cancellation
-        break;
-
-      default:
-        console.log(`Unhandled Paystack event: ${eventType}`);
-    }
-
-    res.status(200).json({ received: true, event: eventType });
-  } catch (err) {
-    console.error("❌ Webhook Error:", err.message, err.stack);
-    res.sendStatus(500);
-  }
-};
-
-// Handle Paystack charge success
-async function handleChargeSuccess(data) {
-  const { reference, amount, currency, paid_at, customer } = data;
-  
-  // Find transaction by reference
-  const transaction = await Transaction.findOne({ reference });
-  
-  if (!transaction) {
-    console.log(`Transaction not found for reference: ${reference}`);
-    return;
-  }
-
-  // Update transaction status
-  transaction.status = "success";
-  transaction.paystackResponse = data;
-  
-  // Update wallet for the sender
-  if (transaction.sender) {
-    const senderWallet = await Wallet.findOne({ user: transaction.sender });
-    if (senderWallet) {
-      // For bill payments, wallet was already debited
-      // For top-ups/funding, credit the wallet
-      if (transaction.type === 'fund' || transaction.type === 'web3_deposit') {
-        senderWallet.balance += transaction.amount;
-        // Add ledger entry
-        if (senderWallet.ledger) {
-          senderWallet.ledger.push({
-            type: 'credit',
-            amount: transaction.amount,
-            transaction: transaction._id,
-            description: `Payment via Paystack: ${reference}`
-          });
-        }
-      }
-      await senderWallet.save();
-    }
-  }
-
-  await transaction.save();
-
-  // Send notification
-  await sendEmail(
-    transaction.sender.email || customer?.email,
-    "Payment Successful",
-    `Your payment of ₦${amount/100} was successful. Reference: ${reference}`
-  );
-}
-
-// Handle Paystack transfer success
-async function handleTransferSuccess(data) {
-  const { reference, amount, currency, completed_at } = data;
-  
-  const transaction = await Transaction.findOne({ 
-    reference,
-    type: 'international_transfer'
-  });
-  
-  if (!transaction) {
-    console.log(`Transfer transaction not found: ${reference}`);
-    return;
-  }
-
-  transaction.status = 'success';
-  transaction.paystackResponse = data;
-  await transaction.save();
-
-  // Notify user
-  if (transaction.sender) {
-    await sendEmail(
-      transaction.sender.email,
-      "International Transfer Successful",
-      `Your international transfer of ₦${amount/100} to ${transaction.receiverName} has been completed.`
-    );
-  }
-}
-
-// Handle Paystack transfer failed
-async function handleTransferFailed(data) {
-  const { reference, amount, reason } = data;
-  
-  const transaction = await Transaction.findOne({ reference });
-  
-  if (!transaction) return;
-
-  transaction.status = 'failed';
-  transaction.paystackResponse = data;
-  
-  // Refund to sender's wallet
-  if (transaction.sender) {
-    const senderWallet = await Wallet.findOne({ user: transaction.sender });
-    if (senderWallet) {
-      senderWallet.balance += transaction.amount;
-      if (senderWallet.ledger) {
-        senderWallet.ledger.push({
-          type: 'credit',
-          amount: transaction.amount,
-          description: `Refund for failed transaction: ${reference}`,
-          transaction: transaction._id
-        });
-      }
-      await senderWallet.save();
-    }
-  }
-
-  await transaction.save();
-}
 
 module.exports = {
   createTransaction,
   getTransactions,
   getTransactionById,
   updateTransactionStatus,
-  handlePaystackWebhook
 };

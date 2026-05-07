@@ -40,7 +40,7 @@ function getSmsEmail(phone) {
 }
 
 // ─── Init ────────────────────────────────────────────────────────────────
-exports.initNotificationService = (socketIO = null) => {
+const initNotificationService = (socketIO = null) => {
   io = socketIO;
   initWhatsApp();
   setInterval(() => { processQueue(); }, 200);
@@ -93,7 +93,7 @@ function initWhatsApp() {
   whatsappClient.initialize();
 }
 
-exports.getWhatsAppStatus = () => ({
+const getWhatsAppStatus = () => ({
   ready: whatsappReady,
   hasQR: !!lastQR,
   qr: lastQR,
@@ -254,17 +254,17 @@ const formatEmail = (notification) => {
 };
 
 // ─── Status ──────────────────────────────────────────────────────────────
-exports.getQueueStatus = () => ({
+const getQueueStatus = () => ({
   pending: queue.length,
   whatsapp: { ready: whatsappReady, hasQR: !!lastQR },
 });
 
 module.exports = {
-  initNotificationService: exports.initNotificationService,
-  getWhatsAppStatus: exports.getWhatsAppStatus,
+  initNotificationService,
+  getWhatsAppStatus,
   sendNotification,
   subscribe,
   sendOTP,
   sendTransactionAlert,
-  getQueueStatus: exports.getQueueStatus,
+  getQueueStatus,
 };

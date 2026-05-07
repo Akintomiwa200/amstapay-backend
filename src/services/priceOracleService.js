@@ -80,6 +80,13 @@ exports.getPrices = async (coinSymbols, vsCurrency = "USD") => {
 
 exports.convertFiat = async (amount, fromCurrency, toCurrency) => {
   if (fromCurrency === toCurrency) return amount;
+
+  const cacheKey = `fiat_${fromCurrency}_${toCurrency}`;
+  const cached = cache[cacheKey];
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+    return (amount / cached.fromRate) * cached.toRate;
+  }
+
   const { data } = await axios.get(`${COINGECKO_BASE}/simple/price`, {
     params: {
       ids: "usd",
@@ -89,6 +96,8 @@ exports.convertFiat = async (amount, fromCurrency, toCurrency) => {
   const fromRate = data.usd?.[fromCurrency.toLowerCase()];
   const toRate = data.usd?.[toCurrency.toLowerCase()];
   if (!fromRate || !toRate) throw new Error("Currency conversion rate unavailable");
+
+  cache[cacheKey] = { fromRate, toRate, timestamp: Date.now() };
   return (amount / fromRate) * toRate;
 };
 

@@ -203,10 +203,4 @@ exports.convertCryptoToFiat = async (req, res) => {
   }
 };
 
-module.exports = {
-  generateWeb3Wallet: exports.generateWeb3Wallet,
-  getWeb3WalletBalance: exports.getWeb3WalletBalance,
-  getSupportedChains: exports.getSupportedChains,
-  sendCrypto: exports.sendCrypto,
-  convertCryptoToFiat: exports.convertCryptoToFiat,
-};
+

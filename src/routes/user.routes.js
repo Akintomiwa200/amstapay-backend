@@ -842,6 +842,47 @@ router.get("/", protect, userController.getAllUsers);
  */
 router.get("/:userId", protect, userController.getUserById);
 
+/**
+ * @swagger
+ * /users/device-token:
+ *   post:
+ *     summary: Update or register device token for push notifications
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - deviceToken
+ *             properties:
+ *               deviceToken:
+ *                 type: string
+ *                 description: FCM device token for push notifications
+ *                 example: "eXampleFirebaseToken123456789"
+ *                 maxLength: 500
+ *     responses:
+ *       200:
+ *         description: Device token updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Device token updated"
+ *       400:
+ *         description: deviceToken is required
+ *       500:
+ *         description: Server error
+ */
 router.post("/device-token", protect, async (req, res) => {
   try {
     const { deviceToken } = req.body;

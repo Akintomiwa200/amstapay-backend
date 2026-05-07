@@ -86,9 +86,15 @@ async function handleChargeSuccess(data) {
   await transaction.save();
 
   // Handle wallet updates based on transaction type
-  if (transaction.type === 'fund' || transaction.type === 'giftcard_purchase' || transaction.type === 'loan_application') {
-    // No wallet debit needed - these already handled or different
-    // For fund, the wallet was credited at creation time, just mark success
+  if (transaction.type === 'fund') {
+    const userWallet = await Wallet.findOne({ user: transaction.sender });
+    if (userWallet) {
+      userWallet.balance += transaction.amount;
+      userWallet.ledger.push({ type: 'credit', amount: transaction.amount, description: `Wallet funded via Paystack: ${reference}` });
+      await userWallet.save();
+    }
+  } else if (transaction.type === 'giftcard_purchase' || transaction.type === 'loan_application') {
+    // No wallet changes needed
   } else if (transaction.type === 'airtime' || transaction.type === 'data' || 
              transaction.type === 'electricity' || transaction.type === 'schoolfees' || 
              transaction.type === 'transport') {

@@ -6,7 +6,7 @@ const { getWhatsAppStatus } = require("./services/customNotificationService");
 console.log("🚀 Starting Amstapay API...");
 
 // ===== Load routes with debugging =====
-let authRoutes, paymentRoutes, walletRoutes, transactionRoutes, userRoutes, webhookRoutes, bankRoutes, giftcardRoutes, loanRoutes, investRoutes, reportRoutes, billsRoutes, internationalRoutes, web3Routes, savingsRoutes, recurringRoutes, cableRoutes, virtualCardRoutes, escrowRoutes, bulkRoutes, twofaRoutes, ussdRoutes, supportRoutes, adminRoutes, insuranceRoutes, referralRoutes;
+let authRoutes, paymentRoutes, walletRoutes, transactionRoutes, userRoutes, webhookRoutes, bankRoutes, giftcardRoutes, loanRoutes, investRoutes, reportRoutes, billsRoutes, internationalRoutes, web3Routes, savingsRoutes, recurringRoutes, cableRoutes, virtualCardRoutes, escrowRoutes, bulkRoutes, twofaRoutes, ussdRoutes, supportRoutes, adminRoutes, insuranceRoutes, referralRoutes, paymentLinksRoutes, moneyRequestRoutes, scheduledPaymentRoutes, groupContributionRoutes, fixedDepositRoutes, microLoanRoutes, extendedBillsRoutes, paymentWebhookRoutes, billSplitRoutes, invoiceRoutes, cashbackRoutes, budgetRoutes, jointAccountRoutes, roundupRoutes, voucherRoutes, subscriptionRoutes;
 
 try {
   console.log("📁 Loading auth routes...");
@@ -118,6 +118,36 @@ try {
   console.error("❌ Error loading Insurance/Referral routes:", err.message);
 }
 
+try {
+  subscriptionRoutes = require("./routes/subscription.routes");
+  voucherRoutes = require("./routes/voucher.routes");
+  roundupRoutes = require("./routes/roundup.routes");
+  jointAccountRoutes = require("./routes/jointAccount.routes");
+  budgetRoutes = require("./routes/budget.routes");
+  cashbackRoutes = require("./routes/cashback.routes");
+  invoiceRoutes = require("./routes/invoice.routes");
+  billSplitRoutes = require("./routes/billSplit.routes");
+  console.log("✅ Additional financial services routes loaded");
+} catch (err) {
+  console.error("❌ Error loading additional routes:", err.message);
+}
+
+try {
+  paymentLinksRoutes = require("./routes/paymentLinks.routes");
+  moneyRequestRoutes = require("./routes/moneyRequest.routes");
+  scheduledPaymentRoutes = require("./routes/scheduledPayment.routes");
+  groupContributionRoutes = require("./routes/groupContribution.routes");
+  fixedDepositRoutes = require("./routes/fixedDeposit.routes");
+  microLoanRoutes = require("./routes/microLoan.routes");
+  extendedBillsRoutes = require("./routes/extendedBills.routes");
+  paymentWebhookRoutes = require("./routes/paymentWebhook.routes");
+  console.log("✅ Extended payment routes loaded");
+} catch (err) {
+  console.error("❌ Error loading extended payment routes:", err.message);
+}
+
+
+
 // ===== Initialize app =====
 const app = express();
 
@@ -167,6 +197,22 @@ if (supportRoutes) app.use(`${API_VERSION}/support`, supportRoutes);
 if (adminRoutes) app.use(`${API_VERSION}/admin`, adminRoutes);
 if (insuranceRoutes) app.use(`${API_VERSION}/insurance`, insuranceRoutes);
 if (referralRoutes) app.use(`${API_VERSION}/referrals`, referralRoutes);
+if (paymentLinksRoutes) app.use(`${API_VERSION}/payment-links`, paymentLinksRoutes);
+if (moneyRequestRoutes) app.use(`${API_VERSION}/money-requests`, moneyRequestRoutes);
+if (scheduledPaymentRoutes) app.use(`${API_VERSION}/scheduled-payments`, scheduledPaymentRoutes);
+if (groupContributionRoutes) app.use(`${API_VERSION}/group-contributions`, groupContributionRoutes);
+if (fixedDepositRoutes) app.use(`${API_VERSION}/fixed-deposits`, fixedDepositRoutes);
+if (microLoanRoutes) app.use(`${API_VERSION}/micro-loans`, microLoanRoutes);
+if (extendedBillsRoutes) app.use(`${API_VERSION}/bills`, extendedBillsRoutes);
+if (paymentWebhookRoutes) app.use(`${API_VERSION}/payment-webhooks`, paymentWebhookRoutes);
+if (billSplitRoutes) app.use(`${API_VERSION}/bill-splits`, billSplitRoutes);
+if (invoiceRoutes) app.use(`${API_VERSION}/invoices`, invoiceRoutes);
+if (cashbackRoutes) app.use(`${API_VERSION}/rewards`, cashbackRoutes);
+if (budgetRoutes) app.use(`${API_VERSION}/budgets`, budgetRoutes);
+if (jointAccountRoutes) app.use(`${API_VERSION}/joint-accounts`, jointAccountRoutes);
+if (roundupRoutes) app.use(`${API_VERSION}/roundup-savings`, roundupRoutes);
+if (voucherRoutes) app.use(`${API_VERSION}/vouchers`, voucherRoutes);
+if (subscriptionRoutes) app.use(`${API_VERSION}/subscriptions`, subscriptionRoutes);
 
 // Also keep backward compatibility for webhook (often needs raw body)
 if (webhookRoutes) app.use("/api/webhook", webhookRoutes);
