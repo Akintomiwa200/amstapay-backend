@@ -2,7 +2,7 @@
 const Wallet = require('../models/Wallet');
 
 // Get bank balance
-exports.getBalance = async (req, res) => {
+const getBalance = async (req, res) => {
   try {
     const wallet = await Wallet.findOne({ user: req.user._id });
 
@@ -17,7 +17,7 @@ exports.getBalance = async (req, res) => {
 };
 
 // Transfer money (internal)
-exports.transfer = async (req, res) => {
+const transfer = async (req, res) => {
   try {
     const { recipientId, amount } = req.body;
 

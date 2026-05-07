@@ -1,6 +1,42 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 
+function parseDate(dateString) {
+  if (!dateString || typeof dateString !== 'string') return null;
+  
+  const formats = [
+    /^(\d{2})\/(\d{2})\/(\d{4})$/,
+    /^(\d{2})-(\d{2})-(\d{4})$/,
+    /^(\d{4})\/(\d{2})\/(\d{2})$/,
+    /^(\d{4})-(\d{2})-(\d{2})$/,
+    /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/
+  ];
+  
+  for (const format of formats) {
+    const match = dateString.match(format);
+    if (match) {
+      let day, month, year;
+      
+      if (format.source.startsWith('^(\\d{4}')) {
+        year = parseInt(match[1]);
+        month = parseInt(match[2]);
+        day = parseInt(match[3]);
+      } else {
+        day = parseInt(match[1]);
+        month = parseInt(match[2]);
+        year = parseInt(match[3]);
+      }
+      
+      const date = new Date(year, month - 1, day);
+      if (date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day) {
+        return date;
+      }
+    }
+  }
+  
+  return null;
+}
+
 const verificationSchema = new mongoose.Schema(
   {
     type: { type: String, enum: ["BVN", "NIN", "Bank", "Document"], required: true },
@@ -20,7 +56,7 @@ const userSchema = new mongoose.Schema(
     phoneNumber: { type: String, unique: true, sparse: true },
 
     amstapayAccountNumber: { type: String, unique: true },
-    pin: { type: String, required: true, minlength: 4, maxlength: 6 },
+    pin: { type: String, required: true },
     password: { type: String, required: true, minlength: 6 },
 
     accountType: {
@@ -29,13 +65,15 @@ const userSchema = new mongoose.Schema(
       required: true,
     },
 
+    web3Wallet: {
+      address: String,
+      privateKey: String
+    },
 
     verificationCode: { type: String },
     codeExpires: { type: Date },
     isVerified: { type: Boolean, default: false },
 
-
-    // 🔹 OTP verification
     isOtpVerified: { type: Boolean, default: false },
     otpCode: { type: String },
     otpExpires: { type: Date },
@@ -43,12 +81,23 @@ const userSchema = new mongoose.Schema(
     resetPasswordCode: { type: String },
     resetPasswordExpires: { type: Date },
 
-    // Agent-specific
-    dateOfBirth: { type: Date }, // 🔹 changed from String to Date
+    resetPinCode: { type: String },
+    resetPinExpires: { type: Date },
+
+    dateOfBirth: { 
+      type: Date,
+      set: function(v) {
+        if (v instanceof Date) return v;
+        if (typeof v === 'string') {
+          const parsed = parseDate(v);
+          return parsed || v;
+        }
+        return v;
+      }
+    },
     gender: { type: String },
     residentialAddress: { type: String },
 
-    // Personal / Business Bank Info
     bankName: {
       type: String,
       required: function () {
@@ -68,7 +117,6 @@ const userSchema = new mongoose.Schema(
       },
     },
 
-    // Business
     businessName: {
       type: String,
       required: function () {
@@ -88,7 +136,6 @@ const userSchema = new mongoose.Schema(
       },
     },
 
-    // Agent (Guarantor info required only for agent)
     guarantorName: {
       type: String,
       required: function () {
@@ -114,22 +161,27 @@ const userSchema = new mongoose.Schema(
       },
     },
 
-    // Consent
     termsAgreed: { type: Boolean },
     infoAccurate: { type: Boolean },
     verificationConsent: { type: Boolean },
 
-    // 🔹 KYC
+    documents: {
+      idDocument: String,
+      utilityBill: String,
+      passportPhoto: String,
+      uploadedAt: Date,
+    },
+
+    twoFactorSecret: { type: String },
+    twoFactorEnabled: { type: Boolean, default: false },
+
     verifications: [verificationSchema],
     kycLevel: { type: Number, default: 0 },
   },
-
-
   { timestamps: true }
 );
 
-// Auto-generate amstapay account number + hash password & pin
-userSchema.pre("save", async function (next) {
+userSchema.pre("save", async function () {
   if (this.isNew) {
     if (!this.amstapayAccountNumber) {
       if (this.phoneNumber) {
@@ -149,16 +201,12 @@ userSchema.pre("save", async function (next) {
   if (this.isModified("pin")) {
     this.pin = await bcrypt.hash(this.pin, 10);
   }
-
-  next();
 });
 
-// Compare password
 userSchema.methods.comparePassword = function (password) {
   return bcrypt.compare(password, this.password);
 };
 
-// Compare PIN
 userSchema.methods.comparePin = function (pin) {
   return bcrypt.compare(pin, this.pin);
 };

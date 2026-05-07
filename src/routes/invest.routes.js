@@ -14,6 +14,110 @@ const { protect } = require("../middleware/auth");
  */
 
 // --------------------
+// Get Investment Plans (Catalog)
+// --------------------
+/**
+ * @swagger
+ * /investments/plans:
+ *   get:
+ *     summary: Get all available investment plans
+ *     tags: [Investments]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: type
+ *         schema:
+ *           type: string
+ *           enum: [mutual-fund, stocks, treasury-bills, bonds, fixed-savings, high-yield]
+ *         description: Filter by plan type
+ *       - in: query
+ *         name: minAmount
+ *         schema:
+ *           type: number
+ *         description: Minimum investment amount filter
+ *     responses:
+ *       200:
+ *         description: List of investment plans
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 count:
+ *                   type: integer
+ *                 plans:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       _id:
+ *                         type: string
+ *                       code:
+ *                         type: string
+ *                         example: "PLAN001"
+ *                       name:
+ *                         type: string
+ *                         example: "Fixed Savings Plan"
+ *                       description:
+ *                         type: string
+ *                       type:
+ *                         type: string
+ *                       roi:
+ *                         type: number
+ *                       minInvestment:
+ *                         type: number
+ *                       maxInvestment:
+ *                         type: number
+ *                       durations:
+ *                         type: array
+ *                       riskLevel:
+ *                         type: string
+ *                       payoutSchedule:
+ *                         type: string
+ *       401:
+ *         description: Not authorized
+ */
+router.get("/plans", protect, investController.getInvestmentPlans);
+
+// --------------------
+// Get Single Investment Plan
+// --------------------
+/**
+ * @swagger
+ * /investments/plans/{planId}:
+ *   get:
+ *     summary: Get details of a specific investment plan
+ *     tags: [Investments]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: planId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Plan ID (code)
+ *     responses:
+ *       200:
+ *         description: Plan details
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 plan:
+ *                   $ref: '#/components/schemas/Investment'
+ *       404:
+ *         description: Plan not found
+ */
+router.get("/plans/:planId", protect, investController.getInvestmentPlan);
+
+// --------------------
 // Create Investment
 // --------------------
 /**
@@ -41,10 +145,10 @@ const { protect } = require("../middleware/auth");
  *                 type: number
  *                 example: 50000
  *               duration:
- *                 type: string
+ *                 type: number
  *                 enum: [3, 6, 9, 12]
  *                 description: Duration in months
- *                 example: "6"
+ *                 example: 6
  *               autoReinvest:
  *                 type: boolean
  *                 example: false
@@ -56,38 +160,46 @@ const { protect } = require("../middleware/auth");
  *             schema:
  *               type: object
  *               properties:
+ *                 success:
+ *                   type: boolean
  *                 message:
  *                   type: string
  *                   example: "Investment created successfully"
- *                 investmentId:
- *                   type: string
- *                   example: "INV123456789"
- *                 plan:
+ *                 data:
  *                   type: object
  *                   properties:
- *                     name:
- *                       type: string
- *                       example: "Fixed Savings Plan"
- *                     roi:
- *                       type: number
- *                       example: 12.5
- *                 amount:
- *                   type: number
- *                   example: 50000
- *                 duration:
- *                   type: number
- *                   example: 6
- *                 startDate:
- *                   type: string
- *                   format: date
- *                   example: "2026-04-22"
- *                 maturityDate:
- *                   type: string
- *                   format: date
- *                   example: "2026-10-22"
- *                 expectedReturns:
- *                   type: number
- *                   example: 6250
+ *                     investment:
+ *                       type: object
+ *                       properties:
+ *                         id:
+ *                           type: string
+ *                           example: "INV123456789"
+ *                         plan:
+ *                           type: object
+ *                           properties:
+ *                             name:
+ *                               type: string
+ *                               example: "Fixed Savings Plan"
+ *                             roi:
+ *                               type: number
+ *                               example: 12.5
+ *                         amount:
+ *                           type: number
+ *                           example: 50000
+ *                         duration:
+ *                           type: number
+ *                           example: 6
+ *                         startDate:
+ *                           type: string
+ *                           format: date
+ *                         maturityDate:
+ *                           type: string
+ *                           format: date
+ *                         expectedReturns:
+ *                           type: number
+ *                           example: 3125
+ *                         autoReinvest:
+ *                           type: boolean
  *       400:
  *         description: Invalid request or insufficient balance
  *       401:
@@ -113,7 +225,7 @@ router.post("/", protect, investController.createInvestment);
  *         name: status
  *         schema:
  *           type: string
- *           enum: [ACTIVE, COMPLETED, CANCELLED, MATURED]
+ *           enum: [ACTIVE, PENDING, MATURED, CANCELLED]
  *         description: Filter by investment status
  *         example: "ACTIVE"
  *       - in: query
@@ -121,34 +233,26 @@ router.post("/", protect, investController.createInvestment);
  *         schema:
  *           type: integer
  *           default: 1
- *         description: Page number for pagination
- *         example: 1
  *       - in: query
  *         name: limit
  *         schema:
  *           type: integer
  *           default: 10
- *         description: Number of items per page
- *         example: 10
  *       - in: query
  *         name: sortBy
  *         schema:
  *           type: string
  *           enum: [createdAt, maturityDate, amount]
  *           default: createdAt
- *         description: Sort field
- *         example: "createdAt"
  *       - in: query
  *         name: sortOrder
  *         schema:
  *           type: string
  *           enum: [asc, desc]
  *           default: desc
- *         description: Sort order
- *         example: "desc"
  *     responses:
  *       200:
- *         description: List of investments retrieved successfully
+ *         description: List of investments
  *         content:
  *           application/json:
  *             schema:
@@ -156,47 +260,14 @@ router.post("/", protect, investController.createInvestment);
  *               properties:
  *                 total:
  *                   type: integer
- *                   example: 15
  *                 page:
  *                   type: integer
- *                   example: 1
  *                 pages:
  *                   type: integer
- *                   example: 2
  *                 investments:
  *                   type: array
  *                   items:
  *                     type: object
- *                     properties:
- *                       id:
- *                         type: string
- *                         example: "INV123456789"
- *                       planName:
- *                         type: string
- *                         example: "Fixed Savings Plan"
- *                       amount:
- *                         type: number
- *                         example: 50000
- *                       roi:
- *                         type: number
- *                         example: 12.5
- *                       duration:
- *                         type: number
- *                         example: 6
- *                       startDate:
- *                         type: string
- *                         format: date
- *                         example: "2026-04-22"
- *                       maturityDate:
- *                         type: string
- *                         format: date
- *                         example: "2026-10-22"
- *                       status:
- *                         type: string
- *                         example: "ACTIVE"
- *                       currentValue:
- *                         type: number
- *                         example: 52604.17
  *       401:
  *         description: Not authorized
  */
@@ -220,78 +291,17 @@ router.get("/", protect, investController.listInvestments);
  *         schema:
  *           type: string
  *         description: Investment ID
- *         example: "INV123456789"
  *     responses:
  *       200:
- *         description: Investment details retrieved successfully
+ *         description: Investment details
  *         content:
  *           application/json:
  *             schema:
  *               type: object
- *               properties:
- *                 id:
- *                   type: string
- *                   example: "INV123456789"
- *                 plan:
- *                   type: object
- *                   properties:
- *                     id:
- *                       type: string
- *                       example: "PLAN001"
- *                     name:
- *                       type: string
- *                       example: "Fixed Savings Plan"
- *                     description:
- *                       type: string
- *                       example: "High-yield fixed savings with guaranteed returns"
- *                     roi:
- *                       type: number
- *                       example: 12.5
- *                 amount:
- *                   type: number
- *                   example: 50000
- *                 startDate:
- *                   type: string
- *                   format: date
- *                   example: "2026-04-22"
- *                 maturityDate:
- *                   type: string
- *                   format: date
- *                   example: "2026-10-22"
- *                 status:
- *                   type: string
- *                   example: "ACTIVE"
- *                 autoReinvest:
- *                   type: boolean
- *                   example: false
- *                 expectedReturns:
- *                   type: number
- *                   example: 6250
- *                 currentValue:
- *                   type: number
- *                   example: 52604.17
- *                 accruedInterest:
- *                   type: number
- *                   example: 2604.17
- *                 transactions:
- *                   type: array
- *                   items:
- *                     type: object
- *                     properties:
- *                       type:
- *                         type: string
- *                         example: "investment"
- *                       amount:
- *                         type: number
- *                         example: 50000
- *                       date:
- *                         type: string
- *                         format: date-time
- *                         example: "2026-04-22T10:00:00.000Z"
  *       401:
  *         description: Not authorized
  *       403:
- *         description: Access denied - investment belongs to another user
+ *         description: Access denied
  *       404:
  *         description: Investment not found
  */

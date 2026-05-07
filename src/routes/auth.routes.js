@@ -70,14 +70,10 @@ const upload = multer({ dest: "uploads/" });
  *       400:
  *         description: Email or phone already in use
  */
-const rateLimit = require('../middleware/rateLimit');
-const validation = require('../middleware/validation');
+const rateLimit = require("../middleware/rateLimit");
+const validation = require("../middleware/validation");
 
-router.post("/signup", 
-  validation.authSignup, 
-  validation.validate,
-  signup
-);
+router.post("/signup", ...validation.authSignup, signup);
 
 /**
  * @swagger
@@ -109,11 +105,7 @@ router.post("/signup",
  *       400:
  *         description: Invalid credentials
  */
-router.post("/login", 
-  require('../middleware/validation').authLogin, 
-  require('../middleware/validation').validate,
-  login
-);
+router.post("/login", ...validation.authLogin, login);
 /**
  * @swagger
  * /auth/change-pin:
@@ -167,17 +159,34 @@ router.post("/change-pin", protect, changePin);
  *       400:
  *         description: Invalid request
  */
-router.post("/upload-documents", upload.fields([
-  { name: "idDocument", maxCount: 1 },
-  { name: "utilityBill", maxCount: 1 },
-  { name: "passportPhoto", maxCount: 1 },
-]), async (req, res) => {
-  try {
-    res.status(200).json({ message: "Documents uploaded successfully" });
-  } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
-});
+router.post(
+  "/upload-documents",
+  protect,
+  upload.fields([
+    { name: "idDocument", maxCount: 1 },
+    { name: "utilityBill", maxCount: 1 },
+    { name: "passportPhoto", maxCount: 1 },
+  ]),
+  async (req, res) => {
+    try {
+      const User = require("../models/User");
+      const user = await User.findById(req.user._id);
+      if (!user) return res.status(404).json({ error: "User not found" });
+
+      const documents = {};
+      if (req.files?.idDocument?.[0]) documents.idDocument = req.files.idDocument[0].path;
+      if (req.files?.utilityBill?.[0]) documents.utilityBill = req.files.utilityBill[0].path;
+      if (req.files?.passportPhoto?.[0]) documents.passportPhoto = req.files.passportPhoto[0].path;
+
+      user.documents = { ...(user.documents || {}), ...documents, uploadedAt: new Date() };
+      await user.save();
+
+      res.status(200).json({ message: "Documents uploaded successfully", data: documents });
+    } catch (err) {
+      res.status(400).json({ error: err.message });
+    }
+  },
+);
 
 /**
  * @swagger
@@ -265,7 +274,6 @@ router.post("/forgot-password", forgotPassword);
 // ✅ Forgot PIN
 router.post("/forgot-pin", forgotPin);
 
-
 /**
  * @swagger
  * /auth/verify-pin-reset-code:
@@ -298,7 +306,6 @@ router.post("/forgot-pin", forgotPin);
  *         description: User not found
  */
 router.post("/verify-pin-reset-code", verifyPinResetCode);
-
 
 /**
  * @swagger
@@ -337,7 +344,6 @@ router.post("/verify-pin-reset-code", verifyPinResetCode);
  *         description: User not found
  */
 router.post("/reset-pin", resetPin);
-
 
 /**
  * @swagger

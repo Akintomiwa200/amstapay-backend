@@ -1,12 +1,33 @@
 const nodemailer = require("nodemailer");
 
 const transporter = nodemailer.createTransport({
-  service: "gmail", // Or your SMTP provider
+  host: process.env.SMTP_HOST || "smtp.gmail.com",
+  port: parseInt(process.env.SMTP_PORT) || 587,
+  secure: process.env.SMTP_SECURE === "true",
   auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
+    user: process.env.SMTP_USER || process.env.EMAIL_USER,
+    pass: process.env.SMTP_PASS || process.env.EMAIL_PASS,
   },
 });
+
+/**
+ * Generic sendEmail function
+ */
+exports.sendEmail = async (to, subject, text, html = null) => {
+  try {
+    const message = {
+      from: process.env.EMAIL_FROM || `"AmstaPay" <${process.env.SMTP_USER || process.env.EMAIL_USER}>`,
+      to,
+      subject,
+      text,
+      html: html || text
+    };
+    return await transporter.sendMail(message);
+  } catch (error) {
+    console.error("Email error:", error);
+    throw error;
+  }
+};
 
 /**
  * Sends a verification code email for AmstaPay signup.
@@ -154,10 +175,10 @@ exports.sendResetPasswordEmail = async (to, name, token) => {
 };
 
 /**
- * Sends a reset PIN email for AmstaPay.
+ * Sends a verification code email for AmstaPay.
  * @param {string} to - User's email
  * @param {string} name - User's full name
- * @param {string} token - Reset PIN token
+ * @param {string} token - Verification token
  */
 exports.sendResetPinEmail = async (to, name, token) => {
   const resetUrl = `${process.env.CLIENT_URL}/reset-pin/${token}`;
@@ -168,7 +189,7 @@ exports.sendResetPinEmail = async (to, name, token) => {
 
       <!-- Header -->
       <div style="background-color: #2563eb; color: white; text-align: center; padding: 40px 20px;">
-        <h1 style="margin: 0; font-size: 26px; font-weight: bold;">Reset Your Transaction PIN 🔒</h1>
+        <h1 style="margin: 0; font-size: 26px; font-weight: bold;">Verification Code Sent via Mail 🔒</h1>
         <p style="margin: 10px 0 0; font-size: 15px;">Keep your AmstaPay wallet secure</p>
       </div>
 
@@ -176,8 +197,8 @@ exports.sendResetPinEmail = async (to, name, token) => {
       <div style="padding: 30px; color: #333;">
         <h2 style="font-size: 20px; margin-top: 0;">Hi ${name},</h2>
         <p style="font-size: 15px; line-height: 1.6;">
-          We received a request to reset your <strong>AmstaPay transaction PIN</strong>. 
-          Use the button below to set a new 4-digit PIN.
+          A verification code has been sent to your mail. 
+          Use the link below to proceed.
         </p>
 
         <!-- Reset Button -->
@@ -193,12 +214,12 @@ exports.sendResetPinEmail = async (to, name, token) => {
             text-decoration: none;
             box-shadow: 0 4px 8px rgba(0,0,0,0.15);
           ">
-            Reset PIN
+            Verify Mail
           </a>
         </div>
 
         <p style="font-size: 13px; color: #555; line-height: 1.6;">
-          ⚠️ This link will expire in <b>15 minutes</b>. If you didn’t request this reset, you can ignore this email.
+          ⚠️ This link will expire in <b>15 minutes</b>. If you didn't request this, you can ignore this email.
         </p>
 
         <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;" />
@@ -219,7 +240,7 @@ exports.sendResetPinEmail = async (to, name, token) => {
   await transporter.sendMail({
     from: `"AmstaPay" <${process.env.EMAIL_USER}>`,
     to,
-    subject: "Reset Your AmstaPay Transaction PIN",
+    subject: "Your AmstaPay Verification Code",
     html: htmlContent,
   });
 };

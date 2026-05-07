@@ -6,6 +6,7 @@ const {
   sendResetPinEmail,
   sendPinResetSuccessEmail
 } = require("../services/emailService");
+const { sendOTP } = require("../services/customNotificationService");
 
 // --------------------
 // Signup
@@ -32,9 +33,22 @@ exports.signup = async (req, res) => {
     });
 
     await user.save();
+    
+    // Send via email
     await sendVerificationCodeEmail(email, fullName, verificationCode);
+    
+    // Send via SMS and WhatsApp using custom notification service
+    if (phoneNumber) {
+      await sendOTP({
+        userId: user._id,
+        email: email,
+        phone: phoneNumber,
+        fullName: fullName,
+        code: verificationCode
+      });
+    }
 
-    res.status(201).json({ message: "Signup successful, verification code sent to email" });
+    res.status(201).json({ message: "Signup successful, verification code sent to email, SMS, and WhatsApp" });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -51,7 +65,7 @@ exports.verifyEmail = async (req, res) => {
     if (!user) return res.status(404).json({ message: "User not found" });
     if (user.isVerified) return res.status(400).json({ message: "User already verified" });
 
-    if (user.verificationCode !== code || user.codeExpires < Date.now()) {
+    if (String(user.verificationCode) !== String(code) || user.codeExpires < Date.now()) {
       return res.status(400).json({ message: "Invalid or expired verification code" });
     }
 
@@ -152,7 +166,7 @@ exports.verifyResetCode = async (req, res) => {
 
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    if (!user.resetPasswordCode || user.resetPasswordCode !== code || user.resetPasswordExpires < Date.now()) {
+    if (!user.resetPasswordCode || String(user.resetPasswordCode) !== String(code) || user.resetPasswordExpires < Date.now()) {
       return res.status(400).json({ message: "Invalid or expired reset code" });
     }
 
@@ -175,7 +189,7 @@ exports.resetPassword = async (req, res) => {
 
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    if (!user.resetPasswordCode || user.resetPasswordCode !== code || user.resetPasswordExpires < Date.now()) {
+    if (!user.resetPasswordCode || String(user.resetPasswordCode) !== String(code) || user.resetPasswordExpires < Date.now()) {
       return res.status(400).json({ message: "Invalid or expired reset code" });
     }
 
@@ -214,7 +228,7 @@ exports.forgotPin = async (req, res) => {
       await sendResetPinEmail(user.email, user.fullName, resetCode);
     }
 
-    res.json({ message: "PIN reset code sent successfully" });
+    res.json({ message: "Verification mail sent successfully" });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -233,11 +247,11 @@ exports.verifyPinResetCode = async (req, res) => {
 
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    if (!user.resetPinCode || user.resetPinCode !== code || user.resetPinExpires < Date.now()) {
+    if (!user.resetPinCode || String(user.resetPinCode) !== String(code) || user.resetPinExpires < Date.now()) {
       return res.status(400).json({ message: "Invalid or expired reset code" });
     }
 
-    res.json({ message: "Code verified. You can now reset your PIN." });
+    res.json({ message: "Mail verified successfully. You can now reset your PIN." });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -256,7 +270,7 @@ exports.resetPin = async (req, res) => {
 
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    if (!user.resetPinCode || user.resetPinCode !== code || user.resetPinExpires < Date.now()) {
+    if (!user.resetPinCode || String(user.resetPinCode) !== String(code) || user.resetPinExpires < Date.now()) {
       return res.status(400).json({ message: "Invalid or expired reset code" });
     }
 

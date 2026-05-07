@@ -1,27 +1,27 @@
 const express = require("express");
 const router = express.Router();
-const investController = require("../controllers/investController");
+const reportsController = require("../controllers/reportsController");
 const { protect } = require("../middleware/auth");
 
 // ==============================
-// Swagger Tag: Investments
+// Swagger Tag: Reports
 // ==============================
 /**
  * @swagger
  * tags:
- *   name: Investments
- *   description: Manage investment plans and portfolios
+ *   name: Reports
+ *   description: Generate financial reports and statements
  */
 
 // --------------------
-// Create Investment
+// Generate Statement
 // --------------------
 /**
  * @swagger
- * /investments:
+ * /reports/statement:
  *   post:
- *     summary: Create a new investment
- *     tags: [Investments]
+ *     summary: Generate account statement for a specific period
+ *     tags: [Reports]
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -31,26 +31,23 @@ const { protect } = require("../middleware/auth");
  *           schema:
  *             type: object
  *             required:
- *               - planId
- *               - amount
+ *               - period
  *             properties:
- *               planId:
+ *               period:
  *                 type: string
- *                 example: "PLAN001"
- *               amount:
- *                 type: number
- *                 example: 50000
- *               duration:
+ *                 description: Period in YYYY-MM format
+ *                 example: "2024-09"
+ *               reportType:
  *                 type: string
- *                 enum: [3, 6, 9, 12]
- *                 description: Duration in months
- *                 example: "6"
- *               autoReinvest:
- *                 type: boolean
- *                 example: false
+ *                 enum: [monthly, quarterly, annual]
+ *                 example: "monthly"
+ *               format:
+ *                 type: string
+ *                 enum: [json, pdf]
+ *                 example: "json"
  *     responses:
- *       201:
- *         description: Investment created successfully
+ *       200:
+ *         description: Statement generated successfully
  *         content:
  *           application/json:
  *             schema:
@@ -58,243 +55,218 @@ const { protect } = require("../middleware/auth");
  *               properties:
  *                 message:
  *                   type: string
- *                   example: "Investment created successfully"
- *                 investmentId:
- *                   type: string
- *                   example: "INV123456789"
- *                 plan:
+ *                   example: "Statement generated successfully"
+ *                 report:
  *                   type: object
  *                   properties:
- *                     name:
+ *                     period:
  *                       type: string
- *                       example: "Fixed Savings Plan"
- *                     roi:
+ *                       example: "2024-09"
+ *                     reportType:
+ *                       type: string
+ *                       example: "monthly"
+ *                     totalIncome:
  *                       type: number
- *                       example: 12.5
- *                 amount:
- *                   type: number
- *                   example: 50000
- *                 duration:
- *                   type: number
- *                   example: 6
- *                 startDate:
- *                   type: string
- *                   format: date
- *                   example: "2026-04-22"
- *                 maturityDate:
- *                   type: string
- *                   format: date
- *                   example: "2026-10-22"
- *                 expectedReturns:
- *                   type: number
- *                   example: 6250
+ *                       example: 50000
+ *                     totalExpense:
+ *                       type: number
+ *                       example: 35000
+ *                     netSavings:
+ *                       type: number
+ *                       example: 15000
+ *                     categories:
+ *                       type: object
+ *                       additionalProperties:
+ *                         type: number
+ *                     transactions:
+ *                       type: array
+ *                       items:
+ *                         type: object
  *       400:
- *         description: Invalid request or insufficient balance
+ *         description: Invalid period format
  *       401:
- *         description: Not authorized
- *       404:
- *         description: Investment plan not found
+ *         description: Unauthorized
  */
-router.post("/", protect, investController.createInvestment);
+router.post("/statement", protect, reportsController.generateStatement);
 
 // --------------------
-// List All Investments
+// Budget Insights
 // --------------------
 /**
  * @swagger
- * /investments:
+ * /reports/budget-insights:
  *   get:
- *     summary: Get all investments for the authenticated user
- *     tags: [Investments]
+ *     summary: Get budget insights and spending analysis
+ *     tags: [Reports]
  *     security:
  *       - bearerAuth: []
  *     parameters:
  *       - in: query
- *         name: status
+ *         name: period
  *         schema:
  *           type: string
- *           enum: [ACTIVE, COMPLETED, CANCELLED, MATURED]
- *         description: Filter by investment status
- *         example: "ACTIVE"
+ *           example: "monthly"
+ *         description: Analysis period (monthly, quarterly, annual)
  *       - in: query
- *         name: page
- *         schema:
- *           type: integer
- *           default: 1
- *         description: Page number for pagination
- *         example: 1
- *       - in: query
- *         name: limit
- *         schema:
- *           type: integer
- *           default: 10
- *         description: Number of items per page
- *         example: 10
- *       - in: query
- *         name: sortBy
+ *         name: startDate
  *         schema:
  *           type: string
- *           enum: [createdAt, maturityDate, amount]
- *           default: createdAt
- *         description: Sort field
- *         example: "createdAt"
+ *           format: date
+ *         description: Start date for analysis
  *       - in: query
- *         name: sortOrder
+ *         name: endDate
  *         schema:
  *           type: string
- *           enum: [asc, desc]
- *           default: desc
- *         description: Sort order
- *         example: "desc"
+ *           format: date
+ *         description: End date for analysis
  *     responses:
  *       200:
- *         description: List of investments retrieved successfully
+ *         description: Budget insights retrieved successfully
  *         content:
  *           application/json:
  *             schema:
  *               type: object
  *               properties:
- *                 total:
- *                   type: integer
- *                   example: 15
- *                 page:
- *                   type: integer
- *                   example: 1
- *                 pages:
- *                   type: integer
- *                   example: 2
- *                 investments:
- *                   type: array
- *                   items:
- *                     type: object
- *                     properties:
- *                       id:
- *                         type: string
- *                         example: "INV123456789"
- *                       planName:
- *                         type: string
- *                         example: "Fixed Savings Plan"
- *                       amount:
+ *                 insights:
+ *                   type: object
+ *                   properties:
+ *                     spendingByCategory:
+ *                       type: object
+ *                       additionalProperties:
  *                         type: number
- *                         example: 50000
- *                       roi:
- *                         type: number
- *                         example: 12.5
- *                       duration:
- *                         type: number
- *                         example: 6
- *                       startDate:
+ *                     topMerchants:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           name:
+ *                             type: string
+ *                           amount:
+ *                             type: number
+ *                     trends:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           month:
+ *                             type: string
+ *                           income:
+ *                             type: number
+ *                           expense:
+ *                             type: number
+ *                     budgetHealth:
+ *                       type: string
+ *                       enum: [excellent, good, fair, poor]
+ *                     advice:
+ *                       type: array
+ *                       items:
  *                         type: string
- *                         format: date
- *                         example: "2026-04-22"
- *                       maturityDate:
- *                         type: string
- *                         format: date
- *                         example: "2026-10-22"
- *                       status:
- *                         type: string
- *                         example: "ACTIVE"
- *                       currentValue:
- *                         type: number
- *                         example: 52604.17
+ *                     projectedBalance:
+ *                       type: number
  *       401:
- *         description: Not authorized
+ *         description: Unauthorized
  */
-router.get("/", protect, investController.listInvestments);
+router.get("/budget-insights", protect, reportsController.budgetInsights);
 
 // --------------------
-// Get Single Investment
+// Get Report by ID
 // --------------------
 /**
  * @swagger
- * /investments/{id}:
+ * /reports/{reportId}:
  *   get:
- *     summary: Get details of a specific investment
- *     tags: [Investments]
+ *     summary: Get a specific report by ID
+ *     tags: [Reports]
  *     security:
  *       - bearerAuth: []
  *     parameters:
  *       - in: path
- *         name: id
+ *         name: reportId
  *         required: true
  *         schema:
  *           type: string
- *         description: Investment ID
- *         example: "INV123456789"
+ *         description: Report ID
  *     responses:
  *       200:
- *         description: Investment details retrieved successfully
+ *         description: Report retrieved successfully
  *         content:
  *           application/json:
  *             schema:
  *               type: object
  *               properties:
- *                 id:
- *                   type: string
- *                   example: "INV123456789"
- *                 plan:
- *                   type: object
- *                   properties:
- *                     id:
- *                       type: string
- *                       example: "PLAN001"
- *                     name:
- *                       type: string
- *                       example: "Fixed Savings Plan"
- *                     description:
- *                       type: string
- *                       example: "High-yield fixed savings with guaranteed returns"
- *                     roi:
- *                       type: number
- *                       example: 12.5
- *                 amount:
- *                   type: number
- *                   example: 50000
- *                 startDate:
- *                   type: string
- *                   format: date
- *                   example: "2026-04-22"
- *                 maturityDate:
- *                   type: string
- *                   format: date
- *                   example: "2026-10-22"
- *                 status:
- *                   type: string
- *                   example: "ACTIVE"
- *                 autoReinvest:
- *                   type: boolean
- *                   example: false
- *                 expectedReturns:
- *                   type: number
- *                   example: 6250
- *                 currentValue:
- *                   type: number
- *                   example: 52604.17
- *                 accruedInterest:
- *                   type: number
- *                   example: 2604.17
- *                 transactions:
- *                   type: array
- *                   items:
- *                     type: object
- *                     properties:
- *                       type:
- *                         type: string
- *                         example: "investment"
- *                       amount:
- *                         type: number
- *                         example: 50000
- *                       date:
- *                         type: string
- *                         format: date-time
- *                         example: "2026-04-22T10:00:00.000Z"
- *       401:
- *         description: Not authorized
- *       403:
- *         description: Access denied - investment belongs to another user
+ *                 report:
+ *                   $ref: '#/components/schemas/Report'
  *       404:
- *         description: Investment not found
+ *         description: Report not found
+ *       401:
+ *         description: Unauthorized
  */
-router.get("/:id", protect, investController.getInvestment);
+router.get("/:reportId", protect, reportsController.getReport);
+
+// --------------------
+// Delete Report
+// --------------------
+/**
+ * @swagger
+ * /reports/{reportId}:
+ *   delete:
+ *     summary: Delete a report
+ *     tags: [Reports]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: reportId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Report deleted successfully
+ *       404:
+ *         description: Report not found
+ *       401:
+ *         description: Unauthorized
+ */
+router.delete("/:reportId", protect, reportsController.deleteReport);
+
+// --------------------
+// Export Report (PDF/CSV)
+// --------------------
+/**
+ * @swagger
+ * /reports/{reportId}/export:
+ *   get:
+ *     summary: Export report to PDF or CSV
+ *     tags: [Reports]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: reportId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: format
+ *         schema:
+ *           type: string
+ *           enum: [pdf, csv, json]
+ *           default: pdf
+ *         description: Export format
+ *     responses:
+ *       200:
+ *         description: Report exported successfully
+ *         content:
+ *           application/pdf:
+ *             schema:
+ *               type: string
+ *               format: binary
+ *       404:
+ *         description: Report not found
+ *       401:
+ *         description: Unauthorized
+ */
+router.get("/:reportId/export", protect, reportsController.exportReport);
 
 module.exports = router;

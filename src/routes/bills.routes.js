@@ -33,6 +33,7 @@ const { protect } = require("../middleware/auth");
  *             required:
  *               - phoneNumber
  *               - amount
+ *               - network
  *             properties:
  *               phoneNumber:
  *                 type: string
@@ -52,18 +53,21 @@ const { protect } = require("../middleware/auth");
  *             schema:
  *               type: object
  *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
  *                 message:
  *                   type: string
- *                   example: "Airtime purchase successful"
- *                 transactionId:
- *                   type: string
- *                   example: "TXN123456789"
- *                 amount:
- *                   type: number
- *                   example: 500
- *                 phoneNumber:
- *                   type: string
- *                   example: "08012345678"
+ *                   example: "Airtime purchased successfully"
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     bill:
+ *                       type: object
+ *                     transaction:
+ *                       type: object
+ *                     balance:
+ *                       type: number
  *       400:
  *         description: Invalid request or insufficient balance
  *       401:
@@ -90,18 +94,23 @@ router.post("/airtime", protect, billsController.buyAirtime);
  *             type: object
  *             required:
  *               - phoneNumber
+ *               - network
  *               - dataPlanId
+ *               - amount
  *             properties:
  *               phoneNumber:
  *                 type: string
  *                 example: "08012345678"
- *               dataPlanId:
- *                 type: string
- *                 example: "DP001"
  *               network:
  *                 type: string
  *                 enum: [MTN, GLO, AIRTEL, 9MOBILE]
  *                 example: "MTN"
+ *               dataPlanId:
+ *                 type: string
+ *                 example: "PLAN_2GB_MONTHLY"
+ *               amount:
+ *                 type: number
+ *                 example: 1000
  *     responses:
  *       200:
  *         description: Data plan purchased successfully
@@ -110,18 +119,17 @@ router.post("/airtime", protect, billsController.buyAirtime);
  *             schema:
  *               type: object
  *               properties:
+ *                 success:
+ *                   type: boolean
  *                 message:
  *                   type: string
- *                   example: "Data purchase successful"
- *                 transactionId:
- *                   type: string
- *                   example: "TXN123456789"
- *                 plan:
- *                   type: string
- *                   example: "2GB - 30 Days"
- *                 amount:
- *                   type: number
- *                   example: 1000
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     plan:
+ *                       type: string
+ *                     balance:
+ *                       type: number
  *       400:
  *         description: Invalid request or insufficient balance
  *       401:
@@ -173,21 +181,18 @@ router.post("/data", protect, billsController.buyData);
  *             schema:
  *               type: object
  *               properties:
+ *                 success:
+ *                   type: boolean
  *                 message:
  *                   type: string
- *                   example: "Electricity bill payment successful"
- *                 transactionId:
- *                   type: string
- *                   example: "TXN123456789"
- *                 amount:
- *                   type: number
- *                   example: 5000
- *                 meterNumber:
- *                   type: string
- *                   example: "12345678901"
- *                 token:
- *                   type: string
- *                   example: "1234-5678-9012-3456"
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     token:
+ *                       type: string
+ *                       example: "1234-5678-9012-3456"
+ *                     balance:
+ *                       type: number
  *       400:
  *         description: Invalid request or insufficient balance
  *       401:
@@ -241,21 +246,18 @@ router.post("/electricity", protect, billsController.buyElectricity);
  *             schema:
  *               type: object
  *               properties:
+ *                 success:
+ *                   type: boolean
  *                 message:
  *                   type: string
- *                   example: "School fees payment successful"
- *                 transactionId:
- *                   type: string
- *                   example: "TXN123456789"
- *                 amount:
- *                   type: number
- *                   example: 50000
- *                 studentId:
- *                   type: string
- *                   example: "STU12345"
- *                 receiptNumber:
- *                   type: string
- *                   example: "RCP2024001"
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     receiptNumber:
+ *                       type: string
+ *                       example: "RCP2024001"
+ *                     balance:
+ *                       type: number
  *       400:
  *         description: Invalid request or insufficient balance
  *       401:
@@ -282,13 +284,14 @@ router.post("/schoolfees", protect, billsController.paySchoolFees);
  *             type: object
  *             required:
  *               - amount
+ *               - transportType
  *             properties:
  *               amount:
  *                 type: number
  *                 example: 2000
  *               transportType:
  *                 type: string
- *                 enum: [BUS, TRAIN, TAXI, RIDE_SHARE]
+ *                 enum: [BUS, TRAIN, TAXI, RIDE_SHARE, FLIGHT]
  *                 example: "BUS"
  *               route:
  *                 type: string
@@ -304,18 +307,18 @@ router.post("/schoolfees", protect, billsController.paySchoolFees);
  *             schema:
  *               type: object
  *               properties:
+ *                 success:
+ *                   type: boolean
  *                 message:
  *                   type: string
- *                   example: "Transport payment successful"
- *                 transactionId:
- *                   type: string
- *                   example: "TXN123456789"
- *                 amount:
- *                   type: number
- *                   example: 2000
- *                 ticketNumber:
- *                   type: string
- *                   example: "TKT987654321"
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     ticketNumber:
+ *                       type: string
+ *                       example: "TKT987654321"
+ *                     balance:
+ *                       type: number
  *       400:
  *         description: Invalid request or insufficient balance
  *       401:

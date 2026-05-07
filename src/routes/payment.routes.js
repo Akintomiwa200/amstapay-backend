@@ -42,12 +42,11 @@ const { protect } = require("../middleware/auth"); // <-- import protect
  *         description: Payment sent successfully
  */
 const rateLimit = require('../middleware/rateLimit');
-const { validatePayment, validate } = require('../middleware/validation');
+const { validatePayment } = require('../middleware/validation');
 
 router.post("/send", protect, 
   rateLimit.paymentLimiter,
-  validatePayment,
-  validate,
+  ...validatePayment,
   paymentController.sendPayment
 );
 

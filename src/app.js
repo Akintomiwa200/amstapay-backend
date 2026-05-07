@@ -1,48 +1,49 @@
-  // app.js - Amstapay API bootstrap
-  require("dotenv").config();
-  const express = require("express");
+// app.js - Amstapay API bootstrap
+require("dotenv").config();
+const express = require("express");
+const { getWhatsAppStatus } = require("./services/customNotificationService");
 
-  console.log("🚀 Starting Amstapay API...");
+console.log("🚀 Starting Amstapay API...");
 
-  // ===== Load routes with debugging =====
-  let authRoutes, paymentRoutes, walletRoutes, transactionRoutes, userRoutes, webhookRoutes, bankRoutes, giftcardRoutes, loanRoutes, investRoutes, reportRoutes, billsRoutes;
+// ===== Load routes with debugging =====
+let authRoutes, paymentRoutes, walletRoutes, transactionRoutes, userRoutes, webhookRoutes, bankRoutes, giftcardRoutes, loanRoutes, investRoutes, reportRoutes, billsRoutes, internationalRoutes, web3Routes, savingsRoutes, recurringRoutes, cableRoutes, virtualCardRoutes, escrowRoutes, bulkRoutes, twofaRoutes;
 
-  try {
-    console.log("📁 Loading auth routes...");
-    authRoutes = require("./routes/auth.routes");
-    console.log("✅ Auth routes loaded");
-  } catch (err) {
-    console.error("❌ Error loading auth routes:", err.message);
-  }
+try {
+  console.log("📁 Loading auth routes...");
+  authRoutes = require("./routes/auth.routes");
+  console.log("✅ Auth routes loaded");
+} catch (err) {
+  console.error("❌ Error loading auth routes:", err.message);
+}
 
-  try {
-    console.log("📁 Loading payment routes...");
-    paymentRoutes = require("./routes/payment.routes");
-    console.log("✅ Payment routes loaded");
-  } catch (err) {
-    console.error("❌ Error loading payment routes:", err.message);
-  }
+try {
+  console.log("📁 Loading payment routes...");
+  paymentRoutes = require("./routes/payment.routes");
+  console.log("✅ Payment routes loaded");
+} catch (err) {
+  console.error("❌ Error loading payment routes:", err.message);
+}
 
-  try {
-    console.log("📁 Loading wallet routes...");
-    walletRoutes = require("./routes/wallet.routes");
-    console.log("✅ Wallet routes loaded");
-  } catch (err) {
-    console.error("❌ Error loading wallet routes:", err.message);
-  }
+try {
+  console.log("📁 Loading wallet routes...");
+  walletRoutes = require("./routes/wallet.routes");
+  console.log("✅ Wallet routes loaded");
+} catch (err) {
+  console.error("❌ Error loading wallet routes:", err.message);
+}
 
-  try {
-    console.log("📁 Loading transaction routes...");
-    transactionRoutes = require("./routes/transaction.routes");
-    console.log("✅ Transaction routes loaded");
-  } catch (err) {
-    console.error("❌ Error loading transaction routes:", err.message);
-    console.error("Full error:", err);
-    process.exit(1);
-  }
+try {
+  console.log("📁 Loading transaction routes...");
+  transactionRoutes = require("./routes/transaction.routes");
+  console.log("✅ Transaction routes loaded");
+} catch (err) {
+  console.error("❌ Error loading transaction routes:", err.message);
+  console.error("Full error:", err);
+  process.exit(1);
+}
 
 
-  try {
+try {
   bankRoutes = require("./routes/bank.routes");
   giftcardRoutes = require("./routes/giftcard.routes");
   loanRoutes = require("./routes/loan.routes");
@@ -55,89 +56,140 @@
 }
 
 
-  try {
-    console.log("📁 Loading user routes...");
-    userRoutes = require("./routes/user.routes");
-    console.log("✅ User routes loaded");
-  } catch (err) {
-    console.error("❌ Error loading user routes:", err.message);
-  }
+try {
+  console.log("📁 Loading user routes...");
+  userRoutes = require("./routes/user.routes");
+  console.log("✅ User routes loaded");
+} catch (err) {
+  console.error("❌ Error loading user routes:", err.message);
+}
 
-  try {
-    console.log("📁 Loading webhook routes...");
-    webhookRoutes = require("./routes/webhook.routes");
-    console.log("✅ Webhook routes loaded");
-  } catch (err) {
-    console.error("❌ Error loading webhook routes:", err.message);
-  }
+try {
+  console.log("📁 Loading webhook routes...");
+  webhookRoutes = require("./routes/webhook.routes");
+  console.log("✅ Webhook routes loaded");
+} catch (err) {
+  console.error("❌ Error loading webhook routes:", err.message);
+}
 
-  // ===== Initialize app =====
-  const app = express();
+try {
+  console.log("📁 Loading international routes...");
+  internationalRoutes = require("./routes/international.routes");
+  console.log("✅ International routes loaded");
+} catch (err) {
+  console.error("❌ Error loading international routes:", err.message);
+}
 
-  // ===== Apply global middleware =====
-  const applyMiddleware = require("./middleware/index");
-  console.log("⚙️  Setting up middleware...");
-  applyMiddleware(app);
+try {
+  console.log("📁 Loading web3 routes...");
+  web3Routes = require("./routes/web3.routes");
+  console.log("✅ Web3 routes loaded");
+} catch (err) {
+  console.error("❌ Error loading web3 routes:", err.message);
+}
 
-  // ===== Health check =====
-  app.get("/health", (req, res) => {
-    res.json({ status: "ok", message: "Amstapay API is running 🚀" });
+try {
+  savingsRoutes = require("./routes/savings.routes");
+  recurringRoutes = require("./routes/recurring.routes");
+  cableRoutes = require("./routes/cable.routes");
+  virtualCardRoutes = require("./routes/virtualCard.routes");
+  escrowRoutes = require("./routes/escrow.routes");
+  bulkRoutes = require("./routes/bulk.routes");
+  twofaRoutes = require("./routes/twofa.routes");
+  console.log("✅ Financial services routes loaded");
+} catch (err) {
+  console.error("❌ Error loading financial routes:", err.message);
+}
+
+// ===== Initialize app =====
+const app = express();
+
+// ===== Apply global middleware =====
+const applyMiddleware = require("./middleware/index");
+console.log("⚙️  Setting up middleware...");
+applyMiddleware(app);
+
+// ===== Health check =====
+app.get("/health", (req, res) => {
+  res.json({ status: "ok", message: "Amstapay API is running 🚀" });
+});
+
+// ===== WhatsApp status =====
+app.get("/api/whatsapp/status", (req, res) => {
+  res.json(getWhatsAppStatus());
+});
+
+// API base version path
+const API_VERSION = "/api/v1";
+
+// ===== Mount routes with version prefix =====
+console.log("🛣️  Setting up routes with base path:", API_VERSION);
+if (authRoutes) app.use(`${API_VERSION}/auth`, authRoutes);
+if (paymentRoutes) app.use(`${API_VERSION}/payments`, paymentRoutes);
+if (walletRoutes) app.use(`${API_VERSION}/wallets`, walletRoutes);
+if (transactionRoutes) app.use(`${API_VERSION}/transactions`, transactionRoutes);
+if (bankRoutes) app.use(`${API_VERSION}/bank`, bankRoutes);
+if (giftcardRoutes) app.use(`${API_VERSION}/giftcards`, giftcardRoutes);
+if (loanRoutes) app.use(`${API_VERSION}/loans`, loanRoutes);
+if (investRoutes) app.use(`${API_VERSION}/investments`, investRoutes);
+if (reportRoutes) app.use(`${API_VERSION}/reports`, reportRoutes);
+if (billsRoutes) app.use(`${API_VERSION}/bills`, billsRoutes);
+if (internationalRoutes) app.use(`${API_VERSION}/international`, internationalRoutes);
+if (web3Routes) app.use(`${API_VERSION}/web3`, web3Routes);
+if (userRoutes) app.use(`${API_VERSION}/users`, userRoutes);
+if (webhookRoutes) app.use(`${API_VERSION}/webhook`, webhookRoutes);
+if (savingsRoutes) app.use(`${API_VERSION}/savings`, savingsRoutes);
+if (recurringRoutes) app.use(`${API_VERSION}/payments`, recurringRoutes);
+if (cableRoutes) app.use(`${API_VERSION}/bills`, cableRoutes);
+if (virtualCardRoutes) app.use(`${API_VERSION}/cards`, virtualCardRoutes);
+if (escrowRoutes) app.use(`${API_VERSION}/escrow`, escrowRoutes);
+if (bulkRoutes) app.use(`${API_VERSION}/payments`, bulkRoutes);
+if (twofaRoutes) app.use(`${API_VERSION}/auth`, twofaRoutes);
+
+// Also keep backward compatibility for webhook (often needs raw body)
+if (webhookRoutes) app.use("/api/webhook", webhookRoutes);
+
+console.log("🎯 All routes configured with versioning");
+
+// Simple API info endpoint
+app.get(API_VERSION, (req, res) => {
+  res.json({
+    name: "Amstapay API",
+    version: "v1",
+    status: "active",
+    endpoints: {
+      auth: `${API_VERSION}/auth`,
+      users: `${API_VERSION}/users`,
+      wallets: `${API_VERSION}/wallets`,
+      transactions: `${API_VERSION}/transactions`,
+      payments: `${API_VERSION}/payments`,
+      bills: `${API_VERSION}/bills`,
+      giftcards: `${API_VERSION}/giftcards`,
+      loans: `${API_VERSION}/loans`,
+      investments: `${API_VERSION}/investments`,
+      reports: `${API_VERSION}/reports`,
+      bank: `${API_VERSION}/bank`,
+      international: `${API_VERSION}/international`,
+      web3: `${API_VERSION}/web3`,
+      webhook: `${API_VERSION}/webhook`,
+      documentation: "/docs"
+    }
   });
+});
 
-  // API base version path
-  const API_VERSION = "/api/v1";
+// ===== 404 handler =====
+app.use((req, res, next) => {
+  res.status(404).json({ message: "Route not found" });
+});
 
-  // ===== Mount routes with version prefix =====
-  console.log("🛣️  Setting up routes with base path:", API_VERSION);
-  if (authRoutes) app.use(`${API_VERSION}/auth`, authRoutes);
-  if (paymentRoutes) app.use(`${API_VERSION}/payments`, paymentRoutes);
-  if (walletRoutes) app.use(`${API_VERSION}/wallets`, walletRoutes);
-  if (transactionRoutes) app.use(`${API_VERSION}/transactions`, transactionRoutes);
-  if (bankRoutes) app.use(`${API_VERSION}/bank`, bankRoutes);
-  if (giftcardRoutes) app.use(`${API_VERSION}/giftcards`, giftcardRoutes);
-  if (loanRoutes) app.use(`${API_VERSION}/loans`, loanRoutes);
-  if (investRoutes) app.use(`${API_VERSION}/investments`, investRoutes);
-  if (reportRoutes) app.use(`${API_VERSION}/reports`, reportRoutes);
-  if (billsRoutes) app.use(`${API_VERSION}/bills`, billsRoutes);
-  if (userRoutes) app.use(`${API_VERSION}/users`, userRoutes);
-  if (webhookRoutes) app.use(`${API_VERSION}/webhook`, webhookRoutes);
-
-  // Also keep backward compatibility for webhook (often needs raw body)
-  if (webhookRoutes) app.use("/api/webhook", webhookRoutes);
-
-  console.log("🎯 All routes configured with versioning");
-
-  // Simple API info endpoint
-  app.get(API_VERSION, (req, res) => {
-    res.json({
-      name: "Amstapay API",
-      version: "v1",
-      status: "active",
-      endpoints: {
-        auth: `${API_VERSION}/auth`,
-        payments: `${API_VERSION}/payments`,
-        wallets: `${API_VERSION}/wallets`,
-        transactions: `${API_VERSION}/transactions`,
-        users: `${API_VERSION}/users`,
-        webhook: `${API_VERSION}/webhook`,
-        documentation: "/docs"
-      }
-    });
+// ===== Global error handler =====
+app.use((err, req, res, next) => {
+  console.error("❌ Error:", err.stack);
+  res.status(err.status || 500).json({
+    message: err.message || "Internal server error",
   });
+});
 
-  // ===== 404 handler =====
-  app.use((req, res, next) => {
-    res.status(404).json({ message: "Route not found" });
-  });
+console.log("✅ App setup complete");
 
-  // ===== Global error handler =====
-  app.use((err, req, res, next) => {
-    console.error("❌ Error:", err.stack);
-    res.status(err.status || 500).json({
-      message: err.message || "Internal server error",
-    });
-  });
-
-  console.log("✅ App setup complete");
-
-  module.exports = app;
+module.exports = app;
