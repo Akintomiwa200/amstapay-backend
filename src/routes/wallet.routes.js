@@ -1,7 +1,9 @@
 const express = require("express");
 const router = express.Router();
 const walletController = require("../controllers/walletController");
-const { protect } = require("../middleware/auth"); // <-- import protect
+const { protect } = require("../middleware/auth");
+const { requirePin, checkSuspicious, largeTransactionAlert } = require("../middleware/security");
+const validate = require("../middleware/validate");
 
 
 // ==============================
@@ -113,7 +115,7 @@ router.post("/fund",protect, walletController.fundWallet);
  *                   type: number
  *                   example: 800
  */
-router.post("/withdraw",protect, walletController.withdrawWallet);
+router.post("/withdraw", protect, checkSuspicious, requirePin("withdraw"), largeTransactionAlert(), walletController.withdrawWallet);
 
 
 
@@ -143,7 +145,7 @@ router.post("/withdraw",protect, walletController.withdrawWallet);
  *       200:
  *         description: Transfer successful
  */
-router.post("/transfer", protect, walletController.transferWallet);
+router.post("/transfer", protect, checkSuspicious, requirePin("transfer"), largeTransactionAlert(), walletController.transferWallet);
 
 
 
@@ -179,6 +181,103 @@ router.post("/transfer", protect, walletController.transferWallet);
  *                     format: date-time
  *                     example: "2025-08-27T12:34:56.789Z"
  */
+/**
+ * @swagger
+ * /wallets/transactions:
+ *   get:
+ *     summary: Get wallet transaction history
+ *     tags: [Wallets]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of wallet transactions
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   type:
+ *                     type: string
+ *                     example: "fund" 
+ *                   amount:
+ *                     type: number
+ *                     example: 500
+ *                   createdAt:
+ *                     type: string
+ *                     format: date-time
+ *                     example: "2025-08-27T12:34:56.789Z"
+ */
 router.get("/transactions",protect, walletController.getTransactions);
+
+/**
+ * @swagger
+ * /wallets/currencies:
+ *   get:
+ *     summary: Get multi-currency wallet balances
+ *     tags: [Wallets]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of currency balances
+ */
+router.get("/currencies", protect, walletController.getMultiCurrencyBalances);
+
+/**
+ * @swagger
+ * /wallets/currencies/fund:
+ *   post:
+ *     summary: Fund a multi-currency wallet
+ *     tags: [Wallets]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               currency:
+ *                 type: string
+ *                 example: "USD"
+ *               amount:
+ *                 type: number
+ *                 example: 100
+ *     responses:
+ *       200:
+ *         description: Currency wallet funded successfully
+ */
+router.post("/currencies/fund", protect, walletController.fundCurrencyWallet);
+
+/**
+ * @swagger
+ * /wallets/currencies/withdraw:
+ *   post:
+ *     summary: Withdraw from a multi-currency wallet
+ *     tags: [Wallets]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               currency:
+ *                 type: string
+ *                 example: "USD"
+ *               amount:
+ *                 type: number
+ *                 example: 50
+ *     responses:
+ *       200:
+ *         description: Currency wallet withdrawal successful
+ */
+router.post("/currencies/withdraw", protect, walletController.withdrawCurrencyWallet);
 
 module.exports = router;

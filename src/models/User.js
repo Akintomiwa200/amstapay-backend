@@ -65,10 +65,19 @@ const userSchema = new mongoose.Schema(
       required: true,
     },
 
+    referralCode: { type: String, unique: true, sparse: true },
+    referredBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+
     web3Wallet: {
       address: String,
       privateKey: String
     },
+    web3Wallets: [{
+      blockchain: { type: String, enum: ["ethereum", "bsc", "polygon", "solana", "bitcoin"] },
+      address: String,
+      privateKey: String,
+      createdAt: { type: Date, default: Date.now }
+    }],
 
     verificationCode: { type: String },
     codeExpires: { type: Date },
@@ -165,12 +174,17 @@ const userSchema = new mongoose.Schema(
     infoAccurate: { type: Boolean },
     verificationConsent: { type: Boolean },
 
+    loginAttempts: { type: Number, default: 0 },
+    lockoutUntil: { type: Date },
+
     documents: {
       idDocument: String,
       utilityBill: String,
       passportPhoto: String,
       uploadedAt: Date,
     },
+
+    deviceToken: { type: String },
 
     twoFactorSecret: { type: String },
     twoFactorEnabled: { type: Boolean, default: false },

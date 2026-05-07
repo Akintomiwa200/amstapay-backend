@@ -3,191 +3,200 @@ const Transaction = require("../models/Transaction");
 const User = require("../models/User");
 const Wallet = require("../models/Wallet");
 const axios = require("axios");
+const crypto = require("crypto");
+const priceOracle = require("./priceOracleService");
 
-// ERC20 tokens supported
-const TOKENS = {
-  USDT: {
-    address: "0xdAC17F958D2ee523a2206206994597C13D831ec7",
-    decimals: 6,
-    name: "Tether USD"
+const CHAINS = {
+  ethereum: {
+    name: "Ethereum",
+    nativeToken: "ETH",
+    explorer: "https://etherscan.io",
+    getProvider: () => new ethers.JsonRpcProvider(process.env.ETH_RPC_URL || "https://eth.llamarpc.com"),
   },
-  USDC: {
-    address: "0xA0b86a33E6441E6A0F1DCb04221c4590E0E8a1f5",
-    decimals: 6,
-    name: "USD Coin"
-  }
+  bsc: {
+    name: "Binance Smart Chain",
+    nativeToken: "BNB",
+    explorer: "https://bscscan.com",
+    getProvider: () => new ethers.JsonRpcProvider(process.env.BSC_RPC_URL || "https://bsc-dataseed1.binance.org"),
+  },
+  polygon: {
+    name: "Polygon",
+    nativeToken: "MATIC",
+    explorer: "https://polygonscan.com",
+    getProvider: () => new ethers.JsonRpcProvider(process.env.POLYGON_RPC_URL || "https://polygon-rpc.com"),
+  },
 };
 
-// Provider setup
-const provider = new ethers.JsonRpcProvider(process.env.WEB3_PROVIDER_URL);
+const ERC20_TOKENS = {
+  USDT: { address: "0xdAC17F958D2ee523a2206206994597C13D831ec7", decimals: 6 },
+  USDC: { address: "0xA0b86a33E6441E6A0F1DCb04221c4590E0E8a1f5", decimals: 6 },
+};
 
-/**
- * Generate a new wallet for user
- */
-exports.generateWeb3Wallet = async (userId) => {
+exports.getSupportedChains = () => Object.keys(CHAINS);
+
+exports.generateWeb3Wallet = async (userId, blockchain = "ethereum") => {
   try {
-    const wallet = ethers.Wallet.createRandom();
-    
+    if (!CHAINS[blockchain]) throw new Error(`Unsupported blockchain: ${blockchain}`);
+
+    const evmWallet = ethers.Wallet.createRandom();
     const user = await User.findById(userId);
     if (!user) throw new Error("User not found");
 
-    user.web3Wallet = {
-      address: wallet.address,
-      privateKey: wallet.privateKey
+    if (!user.web3Wallets) user.web3Wallets = [];
+
+    const existing = user.web3Wallets.find(w => w.blockchain === blockchain);
+    if (existing) {
+      return { address: existing.address, blockchain };
+    }
+
+    const walletEntry = {
+      blockchain,
+      address: evmWallet.address,
+      privateKey: evmWallet.privateKey,
     };
+    user.web3Wallets.push(walletEntry);
+
+    if (blockchain === "ethereum" && !user.web3Wallet?.address) {
+      user.web3Wallet = { address: evmWallet.address, privateKey: evmWallet.privateKey };
+    }
+
     await user.save();
 
-    return {
-      address: wallet.address,
-      mnemonic: wallet.mnemonic.phrase
-    };
-  } catch (error) {
-    throw error;
-  };
-};
-
-/**
- * Get wallet balance
- */
-exports.getWeb3WalletBalance = async (address, token = "ETH") => {
-  try {
-    if (token === "ETH") {
-      const balance = await provider.getBalance(address);
-      return ethers.formatEther(balance);
-    }
-
-    const tokenContract = new ethers.Contract(
-      TOKENS[token].address,
-      ["function balanceOf(address) view returns (uint256)"],
-      provider
-    );
-    
-    const balance = await tokenContract.balanceOf(address);
-    return ethers.formatUnits(balance, TOKENS[token].decimals);
+    return { address: evmWallet.address, blockchain, mnemonic: evmWallet.mnemonic.phrase };
   } catch (error) {
     throw error;
   }
 };
 
-/**
- * Deposit crypto to wallet
- */
-exports.depositCrypto = async (req, res) => {
+exports.getWeb3WalletBalance = async (userId, blockchain = "ethereum", token = null) => {
   try {
-    const { amount, token, tokenSymbol } = req.body;
-    const user = await User.findById(req.user._id);
+    const user = await User.findById(userId);
+    if (!user) throw new Error("User not found");
 
-    if (!user.web3Wallet) {
-      await exports.generateWeb3Wallet(req.user._id);
+    const wallet = user.web3Wallets?.find(w => w.blockchain === blockchain) || user.web3Wallet;
+    if (!wallet) throw new Error(`No ${blockchain} wallet found`);
+
+    const address = wallet.address;
+    const chain = CHAINS[blockchain];
+    if (!chain) throw new Error(`Unsupported chain: ${blockchain}`);
+
+    if (blockchain === "solana") {
+      const { data } = await axios.get(`https://api.mainnet-beta.solana.com`, {
+        method: "POST",
+        data: { jsonrpc: "2.0", id: 1, method: "getBalance", params: [address] },
+      });
+      return { blockchain, address, balance: (data.result?.value || 0) / 1e9, token: "SOL" };
     }
 
-    // Create transaction record
-    const transaction = new Transaction({
-      sender: user._id,
-      amount,
-      cryptoAmount: amount,
-      cryptoToken: tokenSymbol,
-      type: "web3_deposit",
-      walletAddress: user.web3Wallet.address,
-      status: "pending",
-      description: `Crypto deposit: ${amount} ${tokenSymbol}`
-    });
+    if (blockchain === "bitcoin") {
+      const { data } = await axios.get(`https://blockchain.info/balance?active=${address}`);
+      const balance = data[address]?.final_balance / 1e8 || 0;
+      return { blockchain, address, balance, token: "BTC" };
+    }
 
-    await transaction.save();
+    const provider = chain.getProvider();
 
-    res.json({
-      message: "Deposit initiated",
-      transaction,
-      walletAddress: user.web3Wallet.address,
-      depositInstructions: `Send ${amount} ${tokenSymbol} to your wallet address`
-    });
+    if (token && ERC20_TOKENS[token]) {
+      const contract = new ethers.Contract(
+        ERC20_TOKENS[token].address,
+        ["function balanceOf(address) view returns (uint256)"],
+        provider
+      );
+      const bal = await contract.balanceOf(address);
+      return { blockchain, address, balance: parseFloat(ethers.formatUnits(bal, ERC20_TOKENS[token].decimals)), token };
+    }
+
+    const bal = await provider.getBalance(address);
+    return { blockchain, address, balance: parseFloat(ethers.formatEther(bal)), token: chain.nativeToken };
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    throw error;
   }
 };
 
-/**
- * Withdraw crypto from wallet
- */
-exports.withdrawCrypto = async (req, res) => {
+exports.sendCrypto = async (userId, toAddress, amount, blockchain = "ethereum", token = null) => {
   try {
-    const { amount, tokenSymbol, toAddress } = req.body;
-    const user = await User.findById(req.user._id);
+    const user = await User.findById(userId);
+    if (!user) throw new Error("User not found");
 
-    if (!user.web3Wallet) {
-      return res.status(400).json({ error: "No Web3 wallet found" });
+    const wallet = user.web3Wallets?.find(w => w.blockchain === blockchain) || user.web3Wallet;
+    if (!wallet || !wallet.privateKey) throw new Error(`No private key for ${blockchain} wallet`);
+
+    const chain = CHAINS[blockchain];
+    if (!chain) throw new Error(`Unsupported chain: ${blockchain}`);
+
+    const provider = chain.getProvider();
+    const signer = new ethers.Wallet(wallet.privateKey, provider);
+
+    let tx;
+    if (token && ERC20_TOKENS[token]) {
+      const tokenContract = new ethers.Contract(
+        ERC20_TOKENS[token].address,
+        ["function transfer(address to, uint256 amount) returns (bool)"],
+        signer
+      );
+      const decimals = ERC20_TOKENS[token].decimals;
+      tx = await tokenContract.transfer(toAddress, ethers.parseUnits(amount.toString(), decimals));
+    } else {
+      tx = await signer.sendTransaction({
+        to: toAddress,
+        value: ethers.parseEther(amount.toString()),
+      });
     }
 
-    // Create withdrawal transaction
-    const transaction = new Transaction({
-      sender: user._id,
-      amount: amount * -1, // Negative for withdrawal
+    const receipt = await tx.wait();
+
+    const txRecord = await Transaction.create({
+      sender: userId,
+      blockchain,
       cryptoAmount: amount,
-      cryptoToken: tokenSymbol,
+      cryptoToken: token || chain.nativeToken,
       type: "web3_withdrawal",
-      walletAddress: toAddress || user.web3Wallet.address,
-      status: "processing",
-      description: `Crypto withdrawal: ${amount} ${tokenSymbol}`
+      walletAddress: toAddress,
+      transactionHash: receipt.hash,
+      status: "success",
+      description: `Sent ${amount} ${token || chain.nativeToken} on ${blockchain}`,
     });
 
-    await transaction.save();
-
-    // In production, sign and broadcast transaction
-    // For now, just mark as processing
-    transaction.status = "pending";
-    transaction.transactionHash = "0x" + require("crypto").randomBytes(32).toString("hex");
-    await transaction.save();
-
-    res.json({
-      message: "Withdrawal initiated",
-      transaction
-    });
+    return { transactionHash: receipt.hash, blockNumber: receipt.blockNumber, transaction: txRecord };
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    throw error;
   }
 };
 
-/**
- * Convert crypto to fiat
- */
 exports.convertCryptoToFiat = async (req, res) => {
   try {
     const { cryptoAmount, cryptoToken } = req.body;
     const user = await User.findById(req.user._id);
 
-    // Get current price (mock - use real API in production)
-    const price = cryptoToken === "ETH" ? 3000 : (cryptoToken === "USDT" || cryptoToken === "USDC" ? 1 : 0.00067);
-    const fiatAmount = cryptoAmount * price;
+    const price = await priceOracle.getCryptoFiatRate(cryptoToken, "NGN");
+    const fiatAmount = Math.round(cryptoAmount * price * 100) / 100;
 
-    // Update user's local wallet
     const wallet = await Wallet.findOne({ user: user._id });
     if (wallet) {
       wallet.balance += fiatAmount;
       wallet.ledger.push({
         type: "credit",
         amount: fiatAmount,
-        description: `Converted ${cryptoAmount} ${cryptoToken} to NGN`
+        description: `Converted ${cryptoAmount} ${cryptoToken} to NGN`,
       });
       await wallet.save();
     }
 
-    // Create transaction record
-    const transaction = new Transaction({
+    const transaction = await Transaction.create({
       sender: user._id,
       amount: fiatAmount,
       cryptoAmount,
       cryptoToken,
       type: "crypto_payment",
       status: "success",
-      description: `Converted ${cryptoAmount} ${cryptoToken} to ₦${fiatAmount}`
+      description: `Converted ${cryptoAmount} ${cryptoToken} to NGN${fiatAmount}`,
     });
-
-    await transaction.save();
 
     res.json({
       message: "Conversion successful",
       fiatAmount,
-      transaction
+      rate: price,
+      transaction,
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -197,7 +206,7 @@ exports.convertCryptoToFiat = async (req, res) => {
 module.exports = {
   generateWeb3Wallet: exports.generateWeb3Wallet,
   getWeb3WalletBalance: exports.getWeb3WalletBalance,
-  depositCrypto: exports.depositCrypto,
-  withdrawCrypto: exports.withdrawCrypto,
-  convertCryptoToFiat: exports.convertCryptoToFiat
+  getSupportedChains: exports.getSupportedChains,
+  sendCrypto: exports.sendCrypto,
+  convertCryptoToFiat: exports.convertCryptoToFiat,
 };

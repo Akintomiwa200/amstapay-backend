@@ -842,4 +842,16 @@ router.get("/", protect, userController.getAllUsers);
  */
 router.get("/:userId", protect, userController.getUserById);
 
+router.post("/device-token", protect, async (req, res) => {
+  try {
+    const { deviceToken } = req.body;
+    if (!deviceToken) return res.status(400).json({ message: "deviceToken required" });
+    req.user.deviceToken = deviceToken;
+    await req.user.save();
+    res.json({ success: true, message: "Device token updated" });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 module.exports = router;

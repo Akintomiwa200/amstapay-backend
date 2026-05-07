@@ -1,179 +1,140 @@
-const { ethers } = require("ethers");
 const User = require("../models/User");
 const Transaction = require("../models/Transaction");
 const Wallet = require("../models/Wallet");
-const { getWeb3WalletBalance, generateWeb3Wallet } = require("../services/web3Service");
+const { generateWeb3Wallet, getWeb3WalletBalance, sendCrypto, getSupportedChains } = require("../services/web3Service");
+const priceOracle = require("../services/priceOracleService");
 
-/**
- * @swagger
- * tags:
- *   name: Web3
- *   description: Web3 and cryptocurrency payments
- */
-
-/**
- * Generate Web3 wallet for user
- */
 exports.generateWallet = async (req, res) => {
   try {
-    const user = await User.findById(req.user._id);
+    const { blockchain } = req.body;
+    const chain = blockchain || "ethereum";
 
-    if (user.web3Wallet?.address) {
-      return res.json({
-        message: "Wallet already exists",
-        address: user.web3Wallet.address
-      });
-    }
-
-    const walletData = await generateWeb3Wallet(req.user._id);
-
-    res.json({
-      message: "Wallet generated successfully",
-      address: walletData.address,
-      mnemonic: walletData.mnemonic
-    });
+    const result = await generateWeb3Wallet(req.user._id, chain);
+    res.json({ message: `${chain} wallet generated`, address: result.address, blockchain: chain });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
 
-/**
- * Get Web3 wallet balance
- */
 exports.getBalance = async (req, res) => {
   try {
-    const { token = "ETH" } = req.query;
-    const user = await User.findById(req.user._id);
-
-    if (!user.web3Wallet) {
-      return res.status(400).json({ error: "No Web3 wallet found" });
-    }
-
-    const balance = await getWeb3WalletBalance(user.web3Wallet.address, token);
-
-    res.json({
-      address: user.web3Wallet.address,
-      token,
-      balance
-    });
+    const { blockchain = "ethereum", token } = req.query;
+    const result = await getWeb3WalletBalance(req.user._id, blockchain, token || null);
+    res.json(result);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
 
-/**
- * Deposit crypto
- */
+exports.getAllBalances = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    const chains = getSupportedChains();
+    const results = [];
+    for (const chain of chains) {
+      try {
+        const balance = await getWeb3WalletBalance(req.user._id, chain);
+        results.push(balance);
+      } catch (e) {
+        results.push({ blockchain: chain, balance: 0, error: e.message });
+      }
+    }
+    res.json({ wallets: results });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+exports.send = async (req, res) => {
+  try {
+    const { amount, toAddress, blockchain = "ethereum", token } = req.body;
+    if (!amount || !toAddress) return res.status(400).json({ error: "amount and toAddress required" });
+
+    const result = await sendCrypto(req.user._id, toAddress, amount, blockchain, token || null);
+    res.json({ message: "Transaction sent", ...result });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 exports.deposit = async (req, res) => {
   try {
-    const { amount, tokenSymbol } = req.body;
+    const { amount, tokenSymbol, blockchain = "ethereum" } = req.body;
     const user = await User.findById(req.user._id);
+    const wallet = user.web3Wallets?.find(w => w.blockchain === blockchain) || user.web3Wallet;
+    if (!wallet) return res.status(400).json({ error: `No ${blockchain} wallet found` });
 
-    if (!user.web3Wallet) {
-      return res.status(400).json({ error: "No Web3 wallet found" });
-    }
-
-    const transaction = new Transaction({
+    const tx = await Transaction.create({
       sender: user._id,
-      amount: 0,
       cryptoAmount: amount,
-      cryptoToken: tokenSymbol,
+      cryptoToken: tokenSymbol || "ETH",
+      blockchain,
       type: "web3_deposit",
-      walletAddress: user.web3Wallet.address,
+      walletAddress: wallet.address,
       status: "pending",
-      description: `Crypto deposit: ${amount} ${tokenSymbol}`
+      description: `Crypto deposit: ${amount} ${tokenSymbol || "ETH"} on ${blockchain}`,
     });
-
-    await transaction.save();
 
     res.json({
       message: "Deposit initiated",
-      transaction,
-      walletAddress: user.web3Wallet.address,
-      instructions: `Send ${amount} ${tokenSymbol} to your wallet address`
+      transaction: tx,
+      walletAddress: wallet.address,
+      instructions: `Send ${amount} ${tokenSymbol || "ETH"} to your ${blockchain} wallet address`,
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
 
-/**
- * Withdraw crypto
- */
-exports.withdraw = async (req, res) => {
-  try {
-    const { amount, tokenSymbol, toAddress } = req.body;
-    const user = await User.findById(req.user._id);
-
-    if (!user.web3Wallet) {
-      return res.status(400).json({ error: "No Web3 wallet found" });
-    }
-
-    const transaction = new Transaction({
-      sender: user._id,
-      amount: 0,
-      cryptoAmount: amount,
-      cryptoToken: tokenSymbol,
-      type: "web3_withdrawal",
-      walletAddress: toAddress || user.web3Wallet.address,
-      status: "processing",
-      description: `Crypto withdrawal: ${amount} ${tokenSymbol}`
-    });
-
-    await transaction.save();
-
-    transaction.status = "pending";
-    transaction.transactionHash = "0x" + require("crypto").randomBytes(32).toString("hex");
-    await transaction.save();
-
-    res.json({
-      message: "Withdrawal initiated",
-      transaction
-    });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
-
-/**
- * Convert crypto to fiat
- */
 exports.convert = async (req, res) => {
   try {
-    const { cryptoAmount, cryptoToken } = req.body;
+    const { cryptoAmount, cryptoToken, toFiat = "NGN" } = req.body;
     const user = await User.findById(req.user._id);
 
-    const price = cryptoToken === "ETH" ? 3000 : (cryptoToken === "USDT" || cryptoToken === "USDC" ? 1 : 0);
-    const fiatAmount = cryptoAmount * price;
+    const rate = await priceOracle.getCryptoFiatRate(cryptoToken, toFiat);
+    const fiatAmount = Math.round(cryptoAmount * rate * 100) / 100;
 
     const wallet = await Wallet.findOne({ user: user._id });
     if (wallet) {
       wallet.balance += fiatAmount;
-      wallet.ledger.push({
-        type: "credit",
-        amount: fiatAmount,
-        description: `Converted ${cryptoAmount} ${cryptoToken} to NGN`
-      });
+      wallet.ledger.push({ type: "credit", amount: fiatAmount, description: `Converted ${cryptoAmount} ${cryptoToken} to ${toFiat}` });
       await wallet.save();
     }
 
-    const transaction = new Transaction({
+    const transaction = await Transaction.create({
       sender: user._id,
       amount: fiatAmount,
       cryptoAmount,
       cryptoToken,
       type: "crypto_payment",
       status: "success",
-      description: `Converted ${cryptoAmount} ${cryptoToken} to ₦${fiatAmount}`
+      description: `Converted ${cryptoAmount} ${cryptoToken} to ${toFiat}${fiatAmount}`,
     });
 
-    await transaction.save();
+    res.json({ message: "Conversion successful", fiatAmount, rate, transaction });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
 
-    res.json({
-      message: "Conversion successful",
-      fiatAmount,
-      transaction
-    });
+exports.getPrice = async (req, res) => {
+  try {
+    const { coin, vs_currency = "USD" } = req.query;
+    if (!coin) return res.status(400).json({ error: "coin query param required" });
+
+    const price = await priceOracle.getPrice(coin, vs_currency);
+    res.json({ coin: coin.toUpperCase(), vs_currency: vs_currency.toUpperCase(), price });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+exports.getPrices = async (req, res) => {
+  try {
+    const { coins, vs_currency = "USD" } = req.query;
+    const coinList = coins ? coins.split(",") : priceOracle.supportedCoins();
+    const prices = await priceOracle.getPrices(coinList, vs_currency);
+    res.json({ vs_currency: vs_currency.toUpperCase(), prices });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -182,7 +143,10 @@ exports.convert = async (req, res) => {
 module.exports = {
   generateWallet: exports.generateWallet,
   getBalance: exports.getBalance,
+  getAllBalances: exports.getAllBalances,
+  send: exports.send,
   deposit: exports.deposit,
-  withdraw: exports.withdraw,
-  convert: exports.convert
+  convert: exports.convert,
+  getPrice: exports.getPrice,
+  getPrices: exports.getPrices,
 };

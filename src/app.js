@@ -6,7 +6,7 @@ const { getWhatsAppStatus } = require("./services/customNotificationService");
 console.log("🚀 Starting Amstapay API...");
 
 // ===== Load routes with debugging =====
-let authRoutes, paymentRoutes, walletRoutes, transactionRoutes, userRoutes, webhookRoutes, bankRoutes, giftcardRoutes, loanRoutes, investRoutes, reportRoutes, billsRoutes, internationalRoutes, web3Routes, savingsRoutes, recurringRoutes, cableRoutes, virtualCardRoutes, escrowRoutes, bulkRoutes, twofaRoutes;
+let authRoutes, paymentRoutes, walletRoutes, transactionRoutes, userRoutes, webhookRoutes, bankRoutes, giftcardRoutes, loanRoutes, investRoutes, reportRoutes, billsRoutes, internationalRoutes, web3Routes, savingsRoutes, recurringRoutes, cableRoutes, virtualCardRoutes, escrowRoutes, bulkRoutes, twofaRoutes, ussdRoutes, supportRoutes, adminRoutes, insuranceRoutes, referralRoutes;
 
 try {
   console.log("📁 Loading auth routes...");
@@ -101,6 +101,23 @@ try {
   console.error("❌ Error loading financial routes:", err.message);
 }
 
+try {
+  ussdRoutes = require("./routes/ussd.routes");
+  supportRoutes = require("./routes/support.routes");
+  adminRoutes = require("./routes/admin.routes");
+  console.log("✅ USSD, Support & Admin routes loaded");
+} catch (err) {
+  console.error("❌ Error loading USSD/Support/Admin routes:", err.message);
+}
+
+try {
+  insuranceRoutes = require("./routes/insurance.routes");
+  referralRoutes = require("./routes/referral.routes");
+  console.log("✅ Insurance & Referral routes loaded");
+} catch (err) {
+  console.error("❌ Error loading Insurance/Referral routes:", err.message);
+}
+
 // ===== Initialize app =====
 const app = express();
 
@@ -145,6 +162,11 @@ if (virtualCardRoutes) app.use(`${API_VERSION}/cards`, virtualCardRoutes);
 if (escrowRoutes) app.use(`${API_VERSION}/escrow`, escrowRoutes);
 if (bulkRoutes) app.use(`${API_VERSION}/payments`, bulkRoutes);
 if (twofaRoutes) app.use(`${API_VERSION}/auth`, twofaRoutes);
+if (ussdRoutes) app.use(`${API_VERSION}/ussd`, ussdRoutes);
+if (supportRoutes) app.use(`${API_VERSION}/support`, supportRoutes);
+if (adminRoutes) app.use(`${API_VERSION}/admin`, adminRoutes);
+if (insuranceRoutes) app.use(`${API_VERSION}/insurance`, insuranceRoutes);
+if (referralRoutes) app.use(`${API_VERSION}/referrals`, referralRoutes);
 
 // Also keep backward compatibility for webhook (often needs raw body)
 if (webhookRoutes) app.use("/api/webhook", webhookRoutes);
@@ -172,6 +194,8 @@ app.get(API_VERSION, (req, res) => {
       international: `${API_VERSION}/international`,
       web3: `${API_VERSION}/web3`,
       webhook: `${API_VERSION}/webhook`,
+      insurance: `${API_VERSION}/insurance`,
+      referrals: `${API_VERSION}/referrals`,
       documentation: "/docs"
     }
   });

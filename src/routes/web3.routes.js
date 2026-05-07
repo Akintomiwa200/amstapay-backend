@@ -1,20 +1,20 @@
 const express = require("express");
 const router = express.Router();
 const { protect } = require("../middleware/auth");
-const web3Controller = require("../controllers/web3Controller");
+const ctrl = require("../controllers/web3Controller");
 
 /**
  * @swagger
  * tags:
  *   name: Web3
- *   description: Web3 and cryptocurrency payments
+ *   description: Web3 wallet and crypto operations
  */
 
 /**
  * @swagger
  * /web3/wallet:
  *   post:
- *     summary: Generate a Web3 wallet for the user
+ *     summary: Generate a new Web3 wallet
  *     tags: [Web3]
  *     security:
  *       - bearerAuth: []
@@ -22,13 +22,13 @@ const web3Controller = require("../controllers/web3Controller");
  *       200:
  *         description: Wallet generated successfully
  */
-router.post("/wallet", protect, web3Controller.generateWallet);
+router.post("/wallet", protect, ctrl.generateWallet);
 
 /**
  * @swagger
  * /web3/balance:
  *   get:
- *     summary: Get crypto wallet balance
+ *     summary: Get crypto balance for a specific token
  *     tags: [Web3]
  *     security:
  *       - bearerAuth: []
@@ -37,13 +37,26 @@ router.post("/wallet", protect, web3Controller.generateWallet);
  *         name: token
  *         schema:
  *           type: string
- *           enum: [ETH, USDT, USDC]
- *         description: Token to check balance for
+ *           example: ETH
  *     responses:
  *       200:
  *         description: Balance retrieved successfully
  */
-router.get("/balance", protect, web3Controller.getBalance);
+router.get("/balance", protect, ctrl.getBalance);
+
+/**
+ * @swagger
+ * /web3/balances:
+ *   get:
+ *     summary: Get all crypto balances
+ *     tags: [Web3]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: All balances retrieved successfully
+ */
+router.get("/balances", protect, ctrl.getAllBalances);
 
 /**
  * @swagger
@@ -60,24 +73,23 @@ router.get("/balance", protect, web3Controller.getBalance);
  *           schema:
  *             type: object
  *             properties:
+ *               token:
+ *                 type: string
+ *                 example: ETH
  *               amount:
  *                 type: number
  *                 example: 0.5
- *               tokenSymbol:
- *                 type: string
- *                 enum: [ETH, USDT, USDC]
- *                 example: ETH
  *     responses:
  *       200:
- *         description: Deposit initiated
+ *         description: Deposit successful
  */
-router.post("/deposit", protect, web3Controller.deposit);
+router.post("/deposit", protect, ctrl.deposit);
 
 /**
  * @swagger
  * /web3/withdraw:
  *   post:
- *     summary: Withdraw crypto from wallet
+ *     summary: Send/withdraw crypto
  *     tags: [Web3]
  *     security:
  *       - bearerAuth: []
@@ -88,27 +100,26 @@ router.post("/deposit", protect, web3Controller.deposit);
  *           schema:
  *             type: object
  *             properties:
+ *               token:
+ *                 type: string
+ *                 example: ETH
+ *               to:
+ *                 type: string
+ *                 example: 0x1234...
  *               amount:
  *                 type: number
  *                 example: 0.1
- *               tokenSymbol:
- *                 type: string
- *                 enum: [ETH, USDT, USDC]
- *                 example: USDT
- *               toAddress:
- *                 type: string
- *                 example: 0x1234...
  *     responses:
  *       200:
- *         description: Withdrawal initiated
+ *         description: Withdrawal successful
  */
-router.post("/withdraw", protect, web3Controller.withdraw);
+router.post("/send", protect, ctrl.send);
 
 /**
  * @swagger
  * /web3/convert:
  *   post:
- *     summary: Convert crypto to local currency
+ *     summary: Convert between crypto tokens
  *     tags: [Web3]
  *     security:
  *       - bearerAuth: []
@@ -119,17 +130,53 @@ router.post("/withdraw", protect, web3Controller.withdraw);
  *           schema:
  *             type: object
  *             properties:
- *               cryptoAmount:
- *                 type: number
- *                 example: 100
- *               cryptoToken:
+ *               fromToken:
  *                 type: string
- *                 enum: [ETH, USDT, USDC]
+ *                 example: ETH
+ *               toToken:
+ *                 type: string
  *                 example: USDT
+ *               amount:
+ *                 type: number
+ *                 example: 1
  *     responses:
  *       200:
  *         description: Conversion successful
  */
-router.post("/convert", protect, web3Controller.convert);
+router.post("/convert", protect, ctrl.convert);
+
+/**
+ * @swagger
+ * /web3/price:
+ *   get:
+ *     summary: Get price of a specific token
+ *     tags: [Web3]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: token
+ *         schema:
+ *           type: string
+ *           example: ETH
+ *     responses:
+ *       200:
+ *         description: Token price retrieved
+ */
+router.get("/price", protect, ctrl.getPrice);
+
+/**
+ * @swagger
+ * /web3/prices:
+ *   get:
+ *     summary: Get prices of all supported tokens
+ *     tags: [Web3]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: All token prices retrieved
+ */
+router.get("/prices", protect, ctrl.getPrices);
 
 module.exports = router;

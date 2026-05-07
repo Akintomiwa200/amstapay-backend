@@ -1,14 +1,8 @@
 const express = require("express");
 const {
-  signup,
-  login,
-  verifyEmail,
-  forgotPassword,
-  resetPassword,
-  changePin,
-  forgotPin,
-  verifyPinResetCode,
-  resetPin,
+  signup, login, verifyEmail, forgotPassword, resetPassword,
+  changePin, forgotPin, verifyPinResetCode, resetPin,
+  refreshToken, logout, changePassword, getSessions, revokeSession,
 } = require("../controllers/authController");
 const { protect } = require("../middleware/auth");
 const router = express.Router();
@@ -381,5 +375,10 @@ router.post("/reset-pin", resetPin);
  *         description: User not found
  */
 router.post("/reset-password", resetPassword);
+router.post("/refresh-token", refreshToken);
+router.post("/logout", protect, logout);
+router.post("/change-password", protect, changePassword);
+router.get("/sessions", protect, getSessions);
+router.delete("/sessions/:deviceId", protect, revokeSession);
 
 module.exports = router;

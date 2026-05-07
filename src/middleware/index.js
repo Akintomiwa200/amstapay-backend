@@ -1,46 +1,61 @@
-// middleware/index.js
 const swaggerMiddleware = require("../config/swagger");
 const cors = require("cors");
 const morgan = require("morgan");
 const helmet = require("helmet");
 const bodyParser = require("body-parser");
 
+const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(",").map(s => s.trim())
+  : ["http://localhost:3000", "http://localhost:5173", "https://amstapay.com"];
+
 module.exports = (app) => {
-  // Trust proxy (IMPORTANT for rate limit + real IP)
   app.set("trust proxy", 1);
 
-  // Security headers
-  app.use(
-    helmet({
-      contentSecurityPolicy:
-        process.env.NODE_ENV !== "production" ? false : undefined,
-      crossOriginEmbedderPolicy: false,
-    }),
-  );
+  app.use(helmet({
+    contentSecurityPolicy: process.env.NODE_ENV !== "production" ? false : undefined,
+    crossOriginEmbedderPolicy: false,
+    crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" },
+    referrerPolicy: { policy: "strict-origin-when-cross-origin" },
+    hsts: { maxAge: 31536000, includeSubDomains: true, preload: true },
+    noSniff: true,
+    xssFilter: true,
+    hidePoweredBy: true,
+    frameguard: { action: "deny" },
+    dnsPrefetchControl: { allow: false },
+    permittedCrossDomainPolicies: { permittedPolicies: "none" },
+  }));
 
-  // CORS (no restriction for now)
-  app.use(
-    cors({
-      origin: true,
-      credentials: true,
-    }),
-  );
+  app.use(cors({
+    origin: process.env.NODE_ENV === "production"
+      ? function (origin, callback) {
+          if (!origin || ALLOWED_ORIGINS.indexOf(origin) !== -1) {
+            callback(null, true);
+          } else {
+            callback(new Error("Not allowed by CORS"));
+          }
+        }
+      : true,
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Device-Id", "X-Requested-With"],
+    maxAge: 86400,
+  }));
 
-  // Logging
   if (process.env.NODE_ENV === "development") {
     app.use(morgan("dev"));
+  } else {
+    app.use(morgan("combined"));
   }
 
-  // Body parsing
-  app.use(bodyParser.json({ limit: "10mb" }));
-  app.use(bodyParser.urlencoded({ extended: true, limit: "10mb" }));
+  app.use(bodyParser.json({ limit: "1mb" }));
+  app.use(bodyParser.urlencoded({ extended: true, limit: "1mb" }));
 
-  // Rate limiting
   const rateLimit = require("./rateLimit");
   rateLimit.applyRateLimits(app);
 
-  // Swagger
   if (process.env.NODE_ENV !== "production") {
     swaggerMiddleware(app);
   }
+
+  console.log("Security middleware configured");
 };

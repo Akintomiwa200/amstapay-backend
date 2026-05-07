@@ -1,21 +1,21 @@
 const express = require("express");
 const router = express.Router();
 const { protect } = require("../middleware/auth");
-const ctrl = require("../controllers/recurringController");
+const ctrl = require("../controllers/insuranceController");
 
 /**
  * @swagger
  * tags:
- *   name: Recurring
- *   description: Recurring payment operations
+ *   name: Insurance
+ *   description: Insurance policy operations
  */
 
 /**
  * @swagger
- * /recurring:
+ * /insurance:
  *   post:
- *     summary: Create a recurring payment
- *     tags: [Recurring]
+ *     summary: Purchase an insurance policy
+ *     tags: [Insurance]
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -25,37 +25,38 @@ const ctrl = require("../controllers/recurringController");
  *           schema:
  *             type: object
  *             properties:
+ *               policyType:
+ *                 type: string
+ *                 example: "life"
  *               amount:
  *                 type: number
- *               interval:
- *                 type: string
- *                 example: "monthly"
+ *                 example: 50000
  *     responses:
  *       200:
- *         description: Recurring payment created
+ *         description: Insurance purchased successfully
  */
-router.post("/recurring", protect, ctrl.createRecurring);
+router.post("/", protect, ctrl.purchaseInsurance);
 
 /**
  * @swagger
- * /recurring:
+ * /insurance:
  *   get:
- *     summary: List my recurring payments
- *     tags: [Recurring]
+ *     summary: List my insurance policies
+ *     tags: [Insurance]
  *     security:
  *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: Recurring payments retrieved
+ *         description: Policies retrieved
  */
-router.get("/recurring", protect, ctrl.listRecurring);
+router.get("/", protect, ctrl.listMyPolicies);
 
 /**
  * @swagger
- * /recurring/{id}:
+ * /insurance/{id}:
  *   get:
- *     summary: Get recurring payment details
- *     tags: [Recurring]
+ *     summary: Get insurance policy details
+ *     tags: [Insurance]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -66,16 +67,16 @@ router.get("/recurring", protect, ctrl.listRecurring);
  *           type: string
  *     responses:
  *       200:
- *         description: Recurring payment details retrieved
+ *         description: Policy details retrieved
  */
-router.get("/recurring/:id", protect, ctrl.getRecurring);
+router.get("/:id", protect, ctrl.getPolicy);
 
 /**
  * @swagger
- * /recurring/{id}/toggle:
- *   patch:
- *     summary: Pause/resume a recurring payment
- *     tags: [Recurring]
+ * /insurance/{id}/claim:
+ *   post:
+ *     summary: File an insurance claim
+ *     tags: [Insurance]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -86,16 +87,16 @@ router.get("/recurring/:id", protect, ctrl.getRecurring);
  *           type: string
  *     responses:
  *       200:
- *         description: Recurring payment toggled successfully
+ *         description: Claim filed successfully
  */
-router.patch("/recurring/:id/toggle", protect, ctrl.pauseRecurring);
+router.post("/:id/claim", protect, ctrl.fileClaim);
 
 /**
  * @swagger
- * /recurring/{id}:
- *   delete:
- *     summary: Cancel a recurring payment
- *     tags: [Recurring]
+ * /insurance/{id}/cancel:
+ *   post:
+ *     summary: Cancel an insurance policy
+ *     tags: [Insurance]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -106,8 +107,8 @@ router.patch("/recurring/:id/toggle", protect, ctrl.pauseRecurring);
  *           type: string
  *     responses:
  *       200:
- *         description: Recurring payment cancelled successfully
+ *         description: Policy cancelled successfully
  */
-router.delete("/recurring/:id", protect, ctrl.cancelRecurring);
+router.post("/:id/cancel", protect, ctrl.cancelPolicy);
 
 module.exports = router;

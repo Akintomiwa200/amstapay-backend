@@ -156,3 +156,98 @@ exports.getTransactions = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
+// ─── Multi-Currency Wallet ─────────────────────────────────────────────
+
+exports.getMultiCurrencyBalances = async (req, res) => {
+  try {
+    const CurrencyWallet = require("../models/CurrencyWallet");
+    const wallets = await CurrencyWallet.find({ user: req.user._id });
+    const ngnWallet = await Wallet.findOne({ user: req.user._id });
+    const result = { NGN: { balance: ngnWallet?.balance || 0 } };
+    for (const w of wallets) {
+      result[w.currency] = { balance: w.balance };
+    }
+    res.json({ currencies: result });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+exports.fundCurrencyWallet = async (req, res) => {
+  try {
+    const CurrencyWallet = require("../models/CurrencyWallet");
+    const { currency, amount } = req.body;
+    if (!["USD", "EUR", "GBP"].includes(currency)) {
+      return res.status(400).json({ message: "Currency must be USD, EUR, or GBP" });
+    }
+    if (!amount || amount <= 0) return res.status(400).json({ message: "Valid amount required" });
+
+    const ngnWallet = await Wallet.findOne({ user: req.user._id });
+    const priceOracle = require("../services/priceOracleService");
+    const rate = await priceOracle.convertFiat(amount, currency, "NGN");
+    const ngnCost = Math.ceil(rate * 1.02 * 100) / 100;
+
+    if (!ngnWallet || ngnWallet.balance < ngnCost) {
+      return res.status(400).json({ message: `Insufficient NGN balance. Need NGN${ngnCost}` });
+    }
+
+    ngnWallet.balance -= ngnCost;
+    ngnWallet.ledger.push({ type: "debit", amount: ngnCost, description: `Convert to ${currency} wallet` });
+    await ngnWallet.save();
+
+    let cWallet = await CurrencyWallet.findOne({ user: req.user._id, currency });
+    if (!cWallet) cWallet = await CurrencyWallet.create({ user: req.user._id, currency, balance: 0 });
+
+    cWallet.balance += amount;
+    cWallet.ledger.push({ type: "credit", amount, description: `Funded from NGN wallet` });
+    await cWallet.save();
+
+    await Transaction.create({
+      sender: req.user._id,
+      amount: ngnCost,
+      type: "fund",
+      status: "success",
+      description: `Funded ${currency} wallet with ${amount} ${currency}`,
+      originalAmount: amount,
+      originalCurrency: currency,
+    });
+
+    res.json({ message: `${currency} wallet funded`, balance: cWallet.balance, ngnBalance: ngnWallet.balance });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+exports.withdrawCurrencyWallet = async (req, res) => {
+  try {
+    const CurrencyWallet = require("../models/CurrencyWallet");
+    const { currency, amount, bankDetails } = req.body;
+    if (!["USD", "EUR", "GBP"].includes(currency)) {
+      return res.status(400).json({ message: "Currency must be USD, EUR, or GBP" });
+    }
+
+    const cWallet = await CurrencyWallet.findOne({ user: req.user._id, currency });
+    if (!cWallet || cWallet.balance < amount) {
+      return res.status(400).json({ message: `Insufficient ${currency} balance` });
+    }
+
+    cWallet.balance -= amount;
+    cWallet.ledger.push({ type: "debit", amount, description: `Withdrawal to ${bankDetails?.accountName || "bank account"}` });
+    await cWallet.save();
+
+    await Transaction.create({
+      sender: req.user._id,
+      amount,
+      type: "withdraw",
+      status: "pending",
+      description: `Withdrew ${amount} ${currency} from ${currency} wallet`,
+      originalAmount: amount,
+      originalCurrency: currency,
+    });
+
+    res.json({ message: `Withdrawal initiated for ${amount} ${currency}`, balance: cWallet.balance });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
