@@ -149,7 +149,7 @@ exports.login = async (req, res) => {
       refreshToken: refreshTokenValue,
       expiresIn: "24h",
       deviceId: deviceInfo.deviceId,
-      user: { id: user._id, fullName: user.fullName, email: user.email, amstapayAccountNumber: user.amstapayAccountNumber, kycLevel: user.kycLevel },
+      user: { id: user._id, fullName: user.fullName, email: user.email, blupayAccountNumber: user.blupayAccountNumber, kycLevel: user.kycLevel },
     });
   } catch (err) {
     res.status(500).json({ message: err.message });

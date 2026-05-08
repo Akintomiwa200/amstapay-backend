@@ -176,7 +176,7 @@ async function handleTransferFailed(data) {
   transaction.error = reason;
   transaction.paystackResponse = data;
   
-  // Refund sender's wallet if transfer was from AmstaPay balance
+  // Refund sender's wallet if transfer was from BluPay balance
   if (transaction.sender && transaction.amount) {
     const senderWallet = await Wallet.findOne({ user: transaction.sender });
     if (senderWallet) {

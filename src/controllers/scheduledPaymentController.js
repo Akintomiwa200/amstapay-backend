@@ -11,7 +11,7 @@ exports.createScheduled = async (req, res) => {
 
     const payment = await ScheduledPayment.create({
       user: req.user._id, type: "one_time",
-      recipientType: "amstapay_user",
+      recipientType: "blupay_user",
       amount, scheduledDate: new Date(scheduledDate),
       description, nextExecutionDate: new Date(scheduledDate),
     });
@@ -29,7 +29,7 @@ exports.createStandingOrder = async (req, res) => {
       return res.status(400).json({ message: "amount, frequency, and recipientAccountNumber required" });
     }
 
-    const recipient = await User.findOne({ amstapayAccountNumber: recipientAccountNumber });
+    const recipient = await User.findOne({ blupayAccountNumber: recipientAccountNumber });
     if (!recipient) return res.status(404).json({ message: "Recipient not found" });
 
     const nextDate = new Date();
@@ -41,7 +41,7 @@ exports.createStandingOrder = async (req, res) => {
 
     const standing = await ScheduledPayment.create({
       user: req.user._id, type: "standing_order",
-      recipientType: "amstapay_user", recipientId: recipient._id,
+      recipientType: "blupay_user", recipientId: recipient._id,
       recipientAccountNumber, recipientName: recipient.fullName,
       amount, frequency, executionDay: executionDay || 1,
       description, maxExecutions: maxExecutions || 0,

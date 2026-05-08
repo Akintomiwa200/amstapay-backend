@@ -1,9 +1,9 @@
-// app.js - Amstapay API bootstrap
+// app.js - Blupay API bootstrap
 require("dotenv").config();
 const express = require("express");
 const { getWhatsAppStatus } = require("./services/customNotificationService");
 
-console.log("🚀 Starting Amstapay API...");
+console.log("🚀 Starting Blupay API...");
 
 // ===== Load routes with debugging =====
 let authRoutes, paymentRoutes, walletRoutes, transactionRoutes, userRoutes, webhookRoutes, bankRoutes, giftcardRoutes, loanRoutes, investRoutes, reportRoutes, billsRoutes, internationalRoutes, web3Routes, savingsRoutes, recurringRoutes, cableRoutes, virtualCardRoutes, escrowRoutes, bulkRoutes, twofaRoutes, ussdRoutes, supportRoutes, adminRoutes, insuranceRoutes, referralRoutes, paymentLinksRoutes, moneyRequestRoutes, scheduledPaymentRoutes, groupContributionRoutes, fixedDepositRoutes, microLoanRoutes, extendedBillsRoutes, paymentWebhookRoutes, billSplitRoutes, invoiceRoutes, cashbackRoutes, budgetRoutes, jointAccountRoutes, roundupRoutes, voucherRoutes, subscriptionRoutes;
@@ -158,7 +158,7 @@ applyMiddleware(app);
 
 // ===== Health check =====
 app.get("/health", (req, res) => {
-  res.json({ status: "ok", message: "Amstapay API is running 🚀" });
+  res.json({ status: "ok", message: "Blupay API is running 🚀" });
 });
 
 // ===== WhatsApp status =====
@@ -222,7 +222,7 @@ console.log("🎯 All routes configured with versioning");
 // Simple API info endpoint
 app.get(API_VERSION, (req, res) => {
   res.json({
-    name: "Amstapay API",
+    name: "Blupay API",
     version: "v1",
     status: "active",
     endpoints: {

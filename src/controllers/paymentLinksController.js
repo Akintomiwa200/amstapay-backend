@@ -18,7 +18,7 @@ exports.createLink = async (req, res) => {
     res.status(201).json({
       message: "Payment link created",
       data: link,
-      url: `${process.env.BASE_URL || "https://amstapay.com"}/pay/${slug}`,
+      url: `${process.env.BASE_URL || "https://blupay.com"}/pay/${slug}`,
     });
   } catch (err) {
     res.status(500).json({ message: err.message });

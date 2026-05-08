@@ -263,7 +263,7 @@ NODE_ENV=development
 PORT=3000
 
 # Database
-MONGODB_URI=mongodb://localhost:27017/amstapay
+MONGODB_URI=mongodb://localhost:27017/blupay
 
 # JWT
 JWT_SECRET=your-secret-key

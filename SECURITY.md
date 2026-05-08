@@ -18,7 +18,7 @@ We take security seriously at Amstapay. If you discover a security vulnerability
 ### Private Reporting Process
 
 1. **DO NOT** disclose the vulnerability publicly
-2. Email us at: **security@amstapay.com**
+2. Email us at: **security@blupay.com**
 3. Include detailed information about the vulnerability
 4. Allow up to 48 hours for initial response
 
@@ -114,7 +114,7 @@ Content-Security-Policy: default-src 'self'
 
 We run a private bug bounty program. To participate:
 
-1. Email security@amstapay.com
+1. Email security@blupay.com
 2. Complete security researcher onboarding
 3. Sign non-disclosure agreement
 4. Begin testing within defined scope
@@ -137,9 +137,9 @@ We run a private bug bounty program. To participate:
 
 ## Contact
 
-**Security Team**: security@amstapay.com  
+**Security Team**: security@blupay.com  
 **Emergency**: +1 (555) 999-9999 (24/7)  
-**PGP Key**: [Download PGP Key](https://amstapay.com/security.pgp)
+**PGP Key**: [Download PGP Key](https://blupay.com/security.pgp)
 
 ---
 

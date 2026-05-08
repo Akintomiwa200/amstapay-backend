@@ -5,7 +5,7 @@ let bullAvailable = false;
 
 try {
   const Bull = require("bull");
-  bullQueue = new Bull("amstapay-jobs", {
+  bullQueue = new Bull("blupay-jobs", {
     redis: process.env.REDIS_URL || "redis://localhost:6379",
     defaultJobOptions: { attempts: 3, backoff: { type: "exponential", delay: 2000 } },
   });

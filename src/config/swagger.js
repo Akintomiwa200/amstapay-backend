@@ -161,7 +161,7 @@ const swaggerUiOptions = {
   explorer: true,
   customCss,
   customJs,
-  customSiteTitle: "AmstaPay API Docs",
+  customSiteTitle: "BluPay API Docs",
   swaggerOptions: {
     persistAuthorization: true,
     displayRequestDuration: true,
@@ -178,10 +178,10 @@ const options = {
   definition: {
     openapi: "3.0.0",
     info: {
-      title: "AmstaPay API",
+      title: "BluPay API",
       version: "1.0.0",
       description:
-        "Production-ready API documentation for AmstaPay - Financial services with international transfers, Web3 integration, and real-time notifications.",
+        "Production-ready API documentation for BluPay - Financial services with international transfers, Web3 integration, and real-time notifications.",
     },
 
     // ✅ SERVERS (LOCAL + PROD + CONDITIONAL STAGING)
@@ -191,14 +191,14 @@ const options = {
         description: "🧪 Local Development",
       },
       {
-        url: "https://amstapay-backend.onrender.com/api/v1",
+        url: "https://blupay-backend.onrender.com/api/v1",
         description: "🚀 Production",
       },
       ...(isProd
         ? []
         : [
             {
-              url: "https://staging.amstapay.com/api/v1",
+              url: "https://staging.blupay.com/api/v1",
               description: "🧪 Staging",
             },
           ]),
@@ -220,7 +220,7 @@ const options = {
             fullName: { type: "string", example: "John Doe" },
             email: { type: "string", example: "john@example.com" },
             phoneNumber: { type: "string", example: "+2348012345678" },
-            amstapayAccountNumber: { type: "string", example: "08012345678" },
+            blupayAccountNumber: { type: "string", example: "08012345678" },
             accountType: {
               type: "string",
               enum: ["personal", "business", "enterprise", "company", "agent"],

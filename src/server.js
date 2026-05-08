@@ -84,22 +84,22 @@ const printBanner = () => {
     "║                                                              ║",
   );
   console.log(
-    "║   █████╗ ███╗   ███╗███████╗████████╗ █████╗          ██╗    ║",
+    "║   ██████╗ ██╗     ██╗   ██╗██████╗  █████╗ ██╗   ██╗        ║",
   );
   console.log(
-    "║  ██╔══██╗████╗ ████║██╔════╝╚══██╔══╝██╔══██╗         ██║    ║",
+    "║   ██╔══██╗██║     ██║   ██║██╔══██╗██╔══██╗╚██╗ ██╔╝        ║",
   );
   console.log(
-    "║  ███████║██╔████╔██║███████╗   ██║   ███████║         ██║    ║",
+    "║   ██████╔╝██║     ██║   ██║██████╔╝███████║ ╚████╔╝         ║",
   );
   console.log(
-    "║  ██╔══██║██║╚██╔╝██║╚════██║   ██║   ██╔══██║         ██     ║",
+    "║   ██╔══██╗██║     ██║   ██║██╔═══╝ ██╔══██║  ╚██╔╝          ║",
   );
   console.log(
-    "║  ██║  ██║██║ ╚═╝ ██║███████║   ██║   ██║  ██║         ██╗    ║",
+    "║   ██████╔╝███████╗╚██████╔╝██║     ██║  ██║   ██║           ║",
   );
   console.log(
-    "║  ╚═╝  ╚═╝╚═╝     ╚═╝╚══════╝   ╚═╝   ╚═╝  ╚═╝         ╚═╝    ║",
+    "║   ╚═════╝ ╚══════╝ ╚═════╝ ╚═╝     ╚═╝  ╚═╝   ╚═╝           ║",
   );
   console.log(
     "║                                                              ║",
@@ -127,7 +127,7 @@ const printServerInfo = () => {
     c.bgGreen +
       c.black +
       c.bright +
-      " ✨ AMSTAPAY SERVER STARTED SUCCESSFULLY ✨".padEnd(W + 2) +
+      " ✨ BLUPAY SERVER STARTED SUCCESSFULLY ✨".padEnd(W + 2) +
       c.reset,
   );
   console.log(line());
@@ -544,7 +544,7 @@ const printTips = () => {
 
   const ts = new Date().toLocaleString("en-NG", { timeZone: "Africa/Lagos" });
   console.log(`\n  ⏰ Started: ${c.bright}${ts} (WAT)${c.reset}`);
-  console.log(`\n${c.green} ✨ Amstapay is ready to serve! ✨${c.reset}\n`);
+  console.log(`\n${c.green} ✨ Blupay is ready to serve! ✨${c.reset}\n`);
 };
 
 // ─── Startup Animation ────────────────────────────────────────────────────────
@@ -553,7 +553,7 @@ const showStartupAnimation = async () => {
   let i = 0;
   const interval = setInterval(() => {
     process.stdout.write(
-      `\r${c.yellow}${frames[i]}${c.reset}  Initializing Amstapay Server...`,
+      `\r${c.yellow}${frames[i]}${c.reset}  Initializing Blupay Server...`,
     );
     i = (i + 1) % frames.length;
   }, 80);

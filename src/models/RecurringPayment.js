@@ -14,7 +14,7 @@ const recurringPaymentSchema = new mongoose.Schema({
   status: { type: String, enum: ["active", "paused", "completed", "cancelled"], default: "active" },
   executionCount: { type: Number, default: 0 },
   maxExecutions: Number,
-  recipientType: { type: String, enum: ["amstapay_user", "external_bank", "bill"], required: true },
+  recipientType: { type: String, enum: ["blupay_user", "external_bank", "bill"], required: true },
   recipientAccountNumber: String,
   recipientBankCode: String,
   recipientName: String,

@@ -10,11 +10,11 @@ const transactionSchema = new mongoose.Schema(
     },
     receiver: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User", // for AmstaPay users
+      ref: "User", // for BluPay users
     },
     receiverName: String,
     receiverAccountNumber: String,
-    receiverBank: String, // e.g. "AmstaPay" or "GTBank"
+    receiverBank: String, // e.g. "BluPay" or "GTBank"
 
     // International transfer fields
     receiverCountry: {

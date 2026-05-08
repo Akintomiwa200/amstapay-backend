@@ -346,7 +346,7 @@ exports.exportReport = async (req, res) => {
       res.setHeader('Content-Disposition', `attachment; filename="statement-${report.period}.pdf"`);
       doc.pipe(res);
 
-      doc.fontSize(20).font("Helvetica-Bold").text("AmstaPay Financial Statement", { align: "center" });
+      doc.fontSize(20).font("Helvetica-Bold").text("BluPay Financial Statement", { align: "center" });
       doc.moveDown();
       doc.fontSize(12).font("Helvetica").text(`Period: ${report.period}`, { align: "center" });
       doc.text(`Generated: ${new Date().toLocaleDateString("en-NG")}`);

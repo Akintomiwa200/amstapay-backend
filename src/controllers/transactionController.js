@@ -89,7 +89,7 @@ const createTransaction = async (req, res) => {
         case 'normal_transfer':
         case 'merchant_payment':
         case 'payment_url':
-          // Internal transfer between AmstaPay users
+          // Internal transfer between BluPay users
           if (!receiverId) {
             throw new Error('receiverId is required for internal transfers');
           }
@@ -285,8 +285,8 @@ const getTransactions = async (req, res) => {
     }
 
     const transactions = await Transaction.find(filter)
-      .populate("sender", "fullName email amstapayAccountNumber")
-      .populate("receiver", "fullName email amstapayAccountNumber")
+      .populate("sender", "fullName email blupayAccountNumber")
+      .populate("receiver", "fullName email blupayAccountNumber")
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(Number(limit));
@@ -312,8 +312,8 @@ const getTransactions = async (req, res) => {
 const getTransactionById = async (req, res) => {
   try {
     const transaction = await Transaction.findById(req.params.id)
-      .populate("sender", "fullName email amstapayAccountNumber")
-      .populate("receiver", "fullName email amstapayAccountNumber");
+      .populate("sender", "fullName email blupayAccountNumber")
+      .populate("receiver", "fullName email blupayAccountNumber");
 
     if (!transaction) {
       return res.status(404).json({ 

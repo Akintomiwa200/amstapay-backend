@@ -16,7 +16,7 @@ const transporter = nodemailer.createTransport({
 exports.sendEmail = async (to, subject, text, html = null) => {
   try {
     const message = {
-      from: process.env.EMAIL_FROM || `"AmstaPay" <${process.env.SMTP_USER || process.env.EMAIL_USER}>`,
+      from: process.env.EMAIL_FROM || `"BluPay" <${process.env.SMTP_USER || process.env.EMAIL_USER}>`,
       to,
       subject,
       text,
@@ -30,7 +30,7 @@ exports.sendEmail = async (to, subject, text, html = null) => {
 };
 
 /**
- * Sends a verification code email for AmstaPay signup.
+ * Sends a verification code email for BluPay signup.
  * @param {string} to - User's email
  * @param {string} fullName - User's full name
  * @param {string|number} code - 6-digit verification code
@@ -42,7 +42,7 @@ exports.sendVerificationCodeEmail = async (to, fullName, code) => {
       
       <!-- Header -->
       <div style="background-color: #f97316; color: white; text-align: center; padding: 40px 20px;">
-        <h1 style="margin: 0; font-size: 28px; font-weight: bold;">Welcome to AmstaPay 🚀</h1>
+        <h1 style="margin: 0; font-size: 28px; font-weight: bold;">Welcome to BluPay 🚀</h1>
         <p style="margin: 10px 0 0; font-size: 16px;">Secure • Fast • Reliable Payments</p>
       </div>
       
@@ -50,7 +50,7 @@ exports.sendVerificationCodeEmail = async (to, fullName, code) => {
       <div style="padding: 30px; color: #333;">
         <h2 style="font-size: 22px; margin-top: 0;">Hi ${fullName},</h2>
         <p style="font-size: 16px; line-height: 1.6;">
-          Thank you for signing up with <strong>AmstaPay</strong>. Use the verification code below to activate your account in the mobile app:
+          Thank you for signing up with <strong>BluPay</strong>. Use the verification code below to activate your account in the mobile app:
         </p>
 
         <!-- Verification Code -->
@@ -75,20 +75,20 @@ exports.sendVerificationCodeEmail = async (to, fullName, code) => {
         </p>
 
         <p style="font-size: 14px; color: #555;">
-          If you did not create an AmstaPay account, you can safely ignore this message.
+          If you did not create an BluPay account, you can safely ignore this message.
         </p>
 
         <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;" />
 
         <p style="font-size: 13px; color: #999; text-align: center;">
           Need help? Contact our support team anytime at 
-          <a href="mailto:support@amstapay.com" style="color:#f97316; text-decoration:none;">support@amstapay.com</a>
+          <a href="mailto:support@blupay.com" style="color:#f97316; text-decoration:none;">support@blupay.com</a>
         </p>
       </div>
       
       <!-- Footer -->
       <div style="background-color: #fafafa; color: #888; text-align: center; padding: 20px; font-size: 12px;">
-        <p style="margin: 5px 0;">© ${new Date().getFullYear()} AmstaPay Inc. All rights reserved.</p>
+        <p style="margin: 5px 0;">© ${new Date().getFullYear()} BluPay Inc. All rights reserved.</p>
         <p style="margin: 0;">123 Payment Lane, Lagos, Nigeria</p>
       </div>
 
@@ -97,15 +97,15 @@ exports.sendVerificationCodeEmail = async (to, fullName, code) => {
   `;
 
   await transporter.sendMail({
-    from: `"AmstaPay" <${process.env.EMAIL_USER}>`,
+    from: `"BluPay" <${process.env.EMAIL_USER}>`,
     to,
-    subject: "Your AmstaPay Verification Code",
+    subject: "Your BluPay Verification Code",
     html: htmlContent,
   });
 };
 
 /**
- * Sends a reset password email for AmstaPay.
+ * Sends a reset password email for BluPay.
  * @param {string} to - User's email
  * @param {string} name - User's full name
  * @param {string} token - Password reset token
@@ -120,14 +120,14 @@ exports.sendResetPasswordEmail = async (to, name, token) => {
       <!-- Header -->
       <div style="background-color: #f97316; color: white; text-align: center; padding: 40px 20px;">
         <h1 style="margin: 0; font-size: 26px; font-weight: bold;">Reset Your Password 🔑</h1>
-        <p style="margin: 10px 0 0; font-size: 15px;">For your AmstaPay account</p>
+        <p style="margin: 10px 0 0; font-size: 15px;">For your BluPay account</p>
       </div>
 
       <!-- Body -->
       <div style="padding: 30px; color: #333;">
         <h2 style="font-size: 20px; margin-top: 0;">Hi ${name},</h2>
         <p style="font-size: 15px; line-height: 1.6;">
-          We received a request to reset your <strong>AmstaPay</strong> password. Click the button below to set a new one.
+          We received a request to reset your <strong>BluPay</strong> password. Click the button below to set a new one.
         </p>
 
         <!-- Reset Button -->
@@ -154,28 +154,28 @@ exports.sendResetPasswordEmail = async (to, name, token) => {
         <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;" />
         <p style="font-size: 12px; color: #999; text-align: center;">
           Need help? Contact our support team anytime at 
-          <a href="mailto:support@amstapay.com" style="color:#f97316; text-decoration:none;">support@amstapay.com</a>
+          <a href="mailto:support@blupay.com" style="color:#f97316; text-decoration:none;">support@blupay.com</a>
         </p>
       </div>
 
       <!-- Footer -->
       <div style="background-color: #fafafa; color: #888; text-align: center; padding: 18px; font-size: 12px;">
-        <p style="margin: 5px 0;">© ${new Date().getFullYear()} AmstaPay Inc. All rights reserved.</p>
+        <p style="margin: 5px 0;">© ${new Date().getFullYear()} BluPay Inc. All rights reserved.</p>
       </div>
     </div>
   </div>
   `;
 
   await transporter.sendMail({
-    from: `"AmstaPay" <${process.env.EMAIL_USER}>`,
+    from: `"BluPay" <${process.env.EMAIL_USER}>`,
     to,
-    subject: "Reset Your AmstaPay Password",
+    subject: "Reset Your BluPay Password",
     html: htmlContent,
   });
 };
 
 /**
- * Sends a verification code email for AmstaPay.
+ * Sends a verification code email for BluPay.
  * @param {string} to - User's email
  * @param {string} name - User's full name
  * @param {string} token - Verification token
@@ -190,7 +190,7 @@ exports.sendResetPinEmail = async (to, name, token) => {
       <!-- Header -->
       <div style="background-color: #2563eb; color: white; text-align: center; padding: 40px 20px;">
         <h1 style="margin: 0; font-size: 26px; font-weight: bold;">Verification Code Sent via Mail 🔒</h1>
-        <p style="margin: 10px 0 0; font-size: 15px;">Keep your AmstaPay wallet secure</p>
+        <p style="margin: 10px 0 0; font-size: 15px;">Keep your BluPay wallet secure</p>
       </div>
 
       <!-- Body -->
@@ -225,22 +225,22 @@ exports.sendResetPinEmail = async (to, name, token) => {
         <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;" />
         <p style="font-size: 12px; color: #999; text-align: center;">
           Need help? Contact our support team anytime at 
-          <a href="mailto:support@amstapay.com" style="color:#2563eb; text-decoration:none;">support@amstapay.com</a>
+          <a href="mailto:support@blupay.com" style="color:#2563eb; text-decoration:none;">support@blupay.com</a>
         </p>
       </div>
 
       <!-- Footer -->
       <div style="background-color: #fafafa; color: #888; text-align: center; padding: 18px; font-size: 12px;">
-        <p style="margin: 5px 0;">© ${new Date().getFullYear()} AmstaPay Inc. All rights reserved.</p>
+        <p style="margin: 5px 0;">© ${new Date().getFullYear()} BluPay Inc. All rights reserved.</p>
       </div>
     </div>
   </div>
   `;
 
   await transporter.sendMail({
-    from: `"AmstaPay" <${process.env.EMAIL_USER}>`,
+    from: `"BluPay" <${process.env.EMAIL_USER}>`,
     to,
-    subject: "Your AmstaPay Verification Code",
+    subject: "Your BluPay Verification Code",
     html: htmlContent,
   });
 };
@@ -259,41 +259,41 @@ exports.sendPinResetSuccessEmail = async (to, name) => {
       <!-- Header -->
       <div style="background-color: #16a34a; color: white; text-align: center; padding: 40px 20px;">
         <h1 style="margin: 0; font-size: 26px; font-weight: bold;">Transaction PIN Updated ✅</h1>
-        <p style="margin: 10px 0 0; font-size: 15px;">Security confirmation from AmstaPay</p>
+        <p style="margin: 10px 0 0; font-size: 15px;">Security confirmation from BluPay</p>
       </div>
 
       <!-- Body -->
       <div style="padding: 30px; color: #333;">
         <h2 style="font-size: 20px; margin-top: 0;">Hi ${name},</h2>
         <p style="font-size: 15px; line-height: 1.6;">
-          This is a confirmation that your <strong>AmstaPay transaction PIN</strong> was successfully updated.
+          This is a confirmation that your <strong>BluPay transaction PIN</strong> was successfully updated.
         </p>
 
         <p style="font-size: 15px; line-height: 1.6;">
           If <strong>you made this change</strong>, no further action is needed.  
           If <strong>you did not request this change</strong>, please contact 
-          <a href="mailto:support@amstapay.com" style="color:#16a34a; text-decoration:none;">support@amstapay.com</a> immediately.
+          <a href="mailto:support@blupay.com" style="color:#16a34a; text-decoration:none;">support@blupay.com</a> immediately.
         </p>
 
         <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;" />
         <p style="font-size: 12px; color: #999; text-align: center;">
           Need help? Our support team is always available at 
-          <a href="mailto:support@amstapay.com" style="color:#16a34a; text-decoration:none;">support@amstapay.com</a>
+          <a href="mailto:support@blupay.com" style="color:#16a34a; text-decoration:none;">support@blupay.com</a>
         </p>
       </div>
 
       <!-- Footer -->
       <div style="background-color: #fafafa; color: #888; text-align: center; padding: 18px; font-size: 12px;">
-        <p style="margin: 5px 0;">© ${new Date().getFullYear()} AmstaPay Inc. All rights reserved.</p>
+        <p style="margin: 5px 0;">© ${new Date().getFullYear()} BluPay Inc. All rights reserved.</p>
       </div>
     </div>
   </div>
   `;
 
   await transporter.sendMail({
-    from: `"AmstaPay" <${process.env.EMAIL_USER}>`,
+    from: `"BluPay" <${process.env.EMAIL_USER}>`,
     to,
-    subject: "Your AmstaPay Transaction PIN Was Updated",
+    subject: "Your BluPay Transaction PIN Was Updated",
     html: htmlContent,
   });
 };
@@ -312,16 +312,16 @@ exports.sendWelcomeEmail = async (to, fullName) => {
       <!-- Header -->
       <div style="background-color: #16a34a; color: white; text-align: center; padding: 40px 20px;">
         <h1 style="margin: 0; font-size: 28px; font-weight: bold;">Welcome Aboard, ${fullName}! 🎉</h1>
-        <p style="margin: 10px 0 0; font-size: 16px;">Your AmstaPay account is ready 🚀</p>
+        <p style="margin: 10px 0 0; font-size: 16px;">Your BluPay account is ready 🚀</p>
       </div>
       
       <!-- Body -->
       <div style="padding: 30px; color: #333;">
         <p style="font-size: 16px; line-height: 1.6;">
-          We’re thrilled to have you join the <strong>AmstaPay</strong> family! Your account has been successfully verified and you can now start enjoying our secure, fast, and reliable payment services.
+          We’re thrilled to have you join the <strong>BluPay</strong> family! Your account has been successfully verified and you can now start enjoying our secure, fast, and reliable payment services.
         </p>
 
-        <h2 style="font-size: 20px; margin-top: 20px; color: #16a34a;">Here’s what you can do with AmstaPay:</h2>
+        <h2 style="font-size: 20px; margin-top: 20px; color: #16a34a;">Here’s what you can do with BluPay:</h2>
         <ul style="font-size: 15px; line-height: 1.8; padding-left: 20px; color: #555;">
           <li>⚡ Instant wallet-to-wallet transfers</li>
           <li>💳 Pay bills and subscriptions with ease</li>
@@ -342,7 +342,7 @@ exports.sendWelcomeEmail = async (to, fullName) => {
             text-decoration: none;
             box-shadow: 0 4px 8px rgba(0,0,0,0.15);
           ">
-            Explore AmstaPay Now
+            Explore BluPay Now
           </a>
         </div>
 
@@ -354,13 +354,13 @@ exports.sendWelcomeEmail = async (to, fullName) => {
 
         <p style="font-size: 13px; color: #999; text-align: center;">
           Need help? Contact our support team anytime at 
-          <a href="mailto:support@amstapay.com" style="color:#16a34a; text-decoration:none;">support@amstapay.com</a>
+          <a href="mailto:support@blupay.com" style="color:#16a34a; text-decoration:none;">support@blupay.com</a>
         </p>
       </div>
       
       <!-- Footer -->
       <div style="background-color: #fafafa; color: #888; text-align: center; padding: 20px; font-size: 12px;">
-        <p style="margin: 5px 0;">© ${new Date().getFullYear()} AmstaPay Inc. All rights reserved.</p>
+        <p style="margin: 5px 0;">© ${new Date().getFullYear()} BluPay Inc. All rights reserved.</p>
         <p style="margin: 0;">123 Payment Lane, Lagos, Nigeria</p>
       </div>
 
@@ -369,9 +369,9 @@ exports.sendWelcomeEmail = async (to, fullName) => {
   `;
 
   await transporter.sendMail({
-    from: `"AmstaPay" <${process.env.EMAIL_USER}>`,
+    from: `"BluPay" <${process.env.EMAIL_USER}>`,
     to,
-    subject: "Welcome to AmstaPay 🎉",
+    subject: "Welcome to BluPay 🎉",
     html: htmlContent,
   });
 };

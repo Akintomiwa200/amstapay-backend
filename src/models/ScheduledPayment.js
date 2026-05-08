@@ -3,7 +3,7 @@ const mongoose = require("mongoose");
 const scheduledPaymentSchema = new mongoose.Schema({
   user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
   type: { type: String, enum: ["one_time", "standing_order"], required: true },
-  recipientType: { type: String, enum: ["amstapay_user", "bank_account"], required: true },
+  recipientType: { type: String, enum: ["blupay_user", "bank_account"], required: true },
   recipientId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
   recipientAccountNumber: String,
   recipientBank: String,

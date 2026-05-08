@@ -12,7 +12,7 @@ exports.createSplit = async (req, res) => {
 
     const participants = [];
     for (const s of splits) {
-      const user = await User.findOne({ amstapayAccountNumber: s.accountNumber });
+      const user = await User.findOne({ blupayAccountNumber: s.accountNumber });
       if (!user) return res.status(404).json({ message: `User not found: ${s.accountNumber}` });
       participants.push({ user: user._id, amount: s.amount || totalAmount / splits.length });
     }
@@ -28,7 +28,7 @@ exports.listSplits = async (req, res) => {
   try {
     const splits = await BillSplit.find({
       $or: [{ creator: req.user._id }, { "participants.user": req.user._id }],
-    }).populate("creator participants.user", "fullName email amstapayAccountNumber")
+    }).populate("creator participants.user", "fullName email blupayAccountNumber")
       .sort({ createdAt: -1 }).lean();
     res.json({ success: true, count: splits.length, data: splits });
   } catch (err) {

@@ -4,7 +4,7 @@ const User = require("../models/User");
 exports.setup2FA = async (req, res) => {
   try {
     const secret = authenticator.generateSecret();
-    const otpauth = authenticator.keyuri(req.user.email || req.user.phoneNumber, "AmstaPay", secret);
+    const otpauth = authenticator.keyuri(req.user.email || req.user.phoneNumber, "BluPay", secret);
     req.user.twoFactorSecret = secret;
     await req.user.save();
     res.json({ success: true, data: { secret, otpauth } });

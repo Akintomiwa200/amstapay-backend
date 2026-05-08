@@ -116,9 +116,9 @@ const sendOTP = async ({ userId, email, phone, fullName, code }) => {
     results.email = "queued";
   }
   if (phone) {
-    queue.push({ type: "otp_sms", to: phone, message: `Your AmstaPay OTP is: ${code}`, channel: "sms", userId, timestamp: new Date() });
+    queue.push({ type: "otp_sms", to: phone, message: `Your BluPay OTP is: ${code}`, channel: "sms", userId, timestamp: new Date() });
     results.sms = "queued";
-    queue.push({ type: "otp_whatsapp", to: phone, message: `\uD83D\uDD10 AmstaPay Verification Code: ${code}\n\nExpires in 10 minutes`, channel: "whatsapp", userId, timestamp: new Date() });
+    queue.push({ type: "otp_whatsapp", to: phone, message: `\uD83D\uDD10 BluPay Verification Code: ${code}\n\nExpires in 10 minutes`, channel: "whatsapp", userId, timestamp: new Date() });
     results.whatsapp = "queued";
   }
   return results;
@@ -132,7 +132,7 @@ const sendTransactionAlert = async ({ userId, email, phone, transaction }) => {
     results.email = "queued";
   }
   if (phone) {
-    queue.push({ type: "transaction_sms", to: phone, message: `AmstaPay: ${type} \u20A6${amount} - ${status} (${reference})`, channel: "sms", userId, timestamp: new Date() });
+    queue.push({ type: "transaction_sms", to: phone, message: `BluPay: ${type} \u20A6${amount} - ${status} (${reference})`, channel: "sms", userId, timestamp: new Date() });
     results.sms = "queued";
   }
   return results;
@@ -144,7 +144,7 @@ const processQueue = async () => {
   const notification = queue.shift();
 
   if (notification.channel === "email" && notification.type === "otp_email") {
-    notification.subject = "Your AmstaPay Verification Code";
+    notification.subject = "Your BluPay Verification Code";
   }
 
   try {
@@ -185,9 +185,9 @@ const sendEmailNotification = async (notification) => {
   });
 
   await transporter.sendMail({
-    from: `"AmstaPay" <${process.env.EMAIL_USER}>`,
+    from: `"BluPay" <${process.env.EMAIL_USER}>`,
     to: notification.to,
-    subject: notification.subject || "AmstaPay Notification",
+    subject: notification.subject || "BluPay Notification",
     html: formatEmail(notification),
   });
   console.log(`[Email] Sent to ${notification.to}`);
@@ -214,7 +214,7 @@ const sendSMSNotification = async (notification) => {
   });
 
   await transporter.sendMail({
-    from: `"AmstaPay" <${process.env.EMAIL_USER}>`,
+    from: `"BluPay" <${process.env.EMAIL_USER}>`,
     to: smsEmail,
     subject: "",
     text: notification.message,
@@ -244,13 +244,13 @@ const formatEmail = (notification) => {
   if (notification.type === "otp_email") {
     return `
       <div style="font-family: Arial, sans-serif; padding: 20px;">
-        <h2>AmstaPay Verification Code</h2>
+        <h2>BluPay Verification Code</h2>
         <p>Hi ${notification.fullName},</p>
         <p>Your verification code is: <strong>${notification.code}</strong></p>
         <p>This code expires in 10 minutes.</p>
       </div>`;
   }
-  return `<div style="font-family: Arial, sans-serif; padding: 20px;"><h2>AmstaPay Notification</h2><p>${notification.message}</p></div>`;
+  return `<div style="font-family: Arial, sans-serif; padding: 20px;"><h2>BluPay Notification</h2><p>${notification.message}</p></div>`;
 };
 
 // ─── Status ──────────────────────────────────────────────────────────────

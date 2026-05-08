@@ -55,7 +55,7 @@ const userSchema = new mongoose.Schema(
     email: { type: String, unique: true, sparse: true },
     phoneNumber: { type: String, unique: true, sparse: true },
 
-    amstapayAccountNumber: { type: String, unique: true },
+    blupayAccountNumber: { type: String, unique: true },
     pin: { type: String, required: true },
     password: { type: String, required: true, minlength: 6 },
 
@@ -199,11 +199,11 @@ const userSchema = new mongoose.Schema(
 
 userSchema.pre("save", async function () {
   if (this.isNew) {
-    if (!this.amstapayAccountNumber) {
+    if (!this.blupayAccountNumber) {
       if (this.phoneNumber) {
-        this.amstapayAccountNumber = this.phoneNumber.replace(/^0/, "");
+        this.blupayAccountNumber = this.phoneNumber.replace(/^0/, "");
       } else {
-        this.amstapayAccountNumber = Math.floor(
+        this.blupayAccountNumber = Math.floor(
           1000000000 + Math.random() * 9000000000
         ).toString();
       }

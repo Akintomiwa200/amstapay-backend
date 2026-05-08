@@ -2,12 +2,12 @@ const mongoose = require("mongoose");
 
 const beneficiarySchema = new mongoose.Schema({
   user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-  type: { type: String, enum: ["amstapay", "bank", "mobile_money"], required: true },
+  type: { type: String, enum: ["blupay", "bank", "mobile_money"], required: true },
   name: { type: String, required: true },
   accountNumber: { type: String, required: true },
   bankName: String,
   bankCode: String,
-  amstapayAccountNumber: String,
+  blupayAccountNumber: String,
   phoneNumber: String,
   email: String,
   isFavorite: { type: Boolean, default: false },

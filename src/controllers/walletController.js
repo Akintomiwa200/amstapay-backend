@@ -123,7 +123,7 @@ exports.transferWallet = async (req, res) => {
 
     const senderId = req.user._id;
 
-    const recipientUser = await User.findOne({ amstapayAccountNumber: recipientAccountNumber });
+    const recipientUser = await User.findOne({ blupayAccountNumber: recipientAccountNumber });
     if (!recipientUser) return res.status(404).json({ message: "Recipient not found" });
 
     const { transaction, senderWallet } = await atomicTransfer({
@@ -145,7 +145,7 @@ exports.transferWallet = async (req, res) => {
 exports.getTransactions = async (req, res) => {
   try {
     const transactions = await Transaction.find({ sender: req.user._id })
-      .sort({ createdAt: -1 }).populate("receiver", "fullName email amstapayAccountNumber");
+      .sort({ createdAt: -1 }).populate("receiver", "fullName email blupayAccountNumber");
     res.json(transactions);
   } catch (err) {
     res.status(500).json({ message: err.message });

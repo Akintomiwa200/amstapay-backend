@@ -3,7 +3,7 @@ const User = require("../models/User");
 const Wallet = require("../models/Wallet");
 const Transaction = require("../models/Transaction");
 
-const MENU_MAIN = "Welcome to AmstaPay\n1. Check Balance\n2. Transfer\n3. Buy Airtime\n4. My Account\n0. Exit";
+const MENU_MAIN = "Welcome to BluPay\n1. Check Balance\n2. Transfer\n3. Buy Airtime\n4. My Account\n0. Exit";
 
 exports.handleUSSD = async (req, res) => {
   try {
@@ -83,7 +83,7 @@ exports.handleUSSD = async (req, res) => {
               response = "Insufficient balance.";
               endSession = true;
             } else {
-              const recipient = await User.findOne({ amstapayAccountNumber: session.data.recipient });
+              const recipient = await User.findOne({ blupayAccountNumber: session.data.recipient });
               if (!recipient) {
                 response = "Recipient not found.";
                 endSession = true;

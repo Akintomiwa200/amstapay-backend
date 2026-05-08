@@ -272,7 +272,7 @@ const listLoans = async (req, res) => {
 const getLoan = async (req, res) => {
   try {
     const loan = await Loan.findById(req.params.id)
-      .populate('user', 'fullName email amstapayAccountNumber');
+      .populate('user', 'fullName email blupayAccountNumber');
 
     if (!loan) {
       return res.status(404).json({ 

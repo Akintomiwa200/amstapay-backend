@@ -9,7 +9,7 @@ exports.requestMoney = async (req, res) => {
     if (!recipientAccountNumber || !amount) return res.status(400).json({ message: "recipientAccountNumber and amount required" });
     if (amount < 50) return res.status(400).json({ message: "Minimum request is ₦50" });
 
-    const recipient = await User.findOne({ amstapayAccountNumber: recipientAccountNumber });
+    const recipient = await User.findOne({ blupayAccountNumber: recipientAccountNumber });
     if (!recipient) return res.status(404).json({ message: "Recipient not found" });
     if (recipient._id.toString() === req.user._id.toString()) return res.status(400).json({ message: "Cannot request from yourself" });
 
@@ -29,7 +29,7 @@ exports.requestMoney = async (req, res) => {
 
 exports.listIncoming = async (req, res) => {
   try {
-    const requests = await MoneyRequest.find({ recipient: req.user._id }).populate("requester", "fullName email amstapayAccountNumber").sort({ createdAt: -1 });
+    const requests = await MoneyRequest.find({ recipient: req.user._id }).populate("requester", "fullName email blupayAccountNumber").sort({ createdAt: -1 });
     res.json({ success: true, count: requests.length, data: requests });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -38,7 +38,7 @@ exports.listIncoming = async (req, res) => {
 
 exports.listOutgoing = async (req, res) => {
   try {
-    const requests = await MoneyRequest.find({ requester: req.user._id }).populate("recipient", "fullName email amstapayAccountNumber").sort({ createdAt: -1 });
+    const requests = await MoneyRequest.find({ requester: req.user._id }).populate("recipient", "fullName email blupayAccountNumber").sort({ createdAt: -1 });
     res.json({ success: true, count: requests.length, data: requests });
   } catch (err) {
     res.status(500).json({ message: err.message });

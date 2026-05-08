@@ -12,7 +12,7 @@ exports.createGroup = async (req, res) => {
     const members = [{ user: req.user._id, role: "admin" }];
     if (memberAccountNumbers && Array.isArray(memberAccountNumbers)) {
       for (const acct of memberAccountNumbers) {
-        const user = await User.findOne({ amstapayAccountNumber: acct });
+        const user = await User.findOne({ blupayAccountNumber: acct });
         if (user && user._id.toString() !== req.user._id.toString()) {
           members.push({ user: user._id, role: "member" });
         }
@@ -108,7 +108,7 @@ exports.listGroups = async (req, res) => {
 exports.getGroup = async (req, res) => {
   try {
     const group = await GroupContribution.findById(req.params.id)
-      .populate("members.user", "fullName email amstapayAccountNumber")
+      .populate("members.user", "fullName email blupayAccountNumber")
       .populate("creator", "fullName");
     if (!group) return res.status(404).json({ message: "Group not found" });
     res.json({ success: true, data: group });

@@ -140,7 +140,7 @@ const upload = require("../middleware/upload");
  *           type: string
  *           format: date-time
  *           example: "2025-09-02T13:34:02.055Z"
- *         amstapayAccountNumber:
+ *         blupayAccountNumber:
  *           type: string
  *           example: "8145328795"
  *         __v:
@@ -333,7 +333,7 @@ const upload = require("../middleware/upload");
  *           type: string
  *           format: date-time
  *           example: "2025-09-02T13:34:02.055Z"
- *         amstapayAccountNumber:
+ *         blupayAccountNumber:
  *           type: string
  *           example: "8145328795"
  */

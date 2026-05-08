@@ -13,12 +13,12 @@ const run = async () => {
     await mongoose.connect(process.env.MONGO_URI);
     console.log("Connected to MongoDB");
 
-    const users = await User.find({ amstapayAccountNumber: { $exists: false } });
+    const users = await User.find({ blupayAccountNumber: { $exists: false } });
 
     for (const user of users) {
-      user.amstapayAccountNumber = generateAccountNumber();
+      user.blupayAccountNumber = generateAccountNumber();
       await user.save();
-      console.log(`Generated account for: ${user.fullName} -> ${user.amstapayAccountNumber}`);
+      console.log(`Generated account for: ${user.fullName} -> ${user.blupayAccountNumber}`);
     }
 
     console.log("✅ All missing account numbers generated");

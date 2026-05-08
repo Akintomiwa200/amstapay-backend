@@ -8,7 +8,7 @@ exports.createJoint = async (req, res) => {
     const { name, partnerAccountNumber, goalAmount, goalDescription } = req.body;
     if (!name || !partnerAccountNumber) return res.status(400).json({ message: "name and partnerAccountNumber required" });
 
-    const partner = await User.findOne({ amstapayAccountNumber: partnerAccountNumber });
+    const partner = await User.findOne({ blupayAccountNumber: partnerAccountNumber });
     if (!partner) return res.status(404).json({ message: "Partner not found" });
     if (partner._id.toString() === req.user._id.toString()) return res.status(400).json({ message: "Cannot create joint account with yourself" });
 

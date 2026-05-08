@@ -51,7 +51,7 @@ const { protect } = require("../middleware/auth"); // <-- import protect
  *                 example: "1234567890"
  *               receiverBank:
  *                 type: string
- *                 example: "AmstaPay"
+ *                 example: "BluPay"
  *               qrData:
  *                 type: string
  *                 example: '{"type":"payment","accountNumber":"1234567890"}'
@@ -197,7 +197,7 @@ module.exports = router;
  *           example: "1234567890"
  *         receiverBank:
  *           type: string
- *           example: "AmstaPay"
+ *           example: "BluPay"
  *         amount:
  *           type: number
  *           example: 500

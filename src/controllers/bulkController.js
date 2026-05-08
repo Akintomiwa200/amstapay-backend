@@ -28,7 +28,7 @@ exports.bulkDisburse = async (req, res) => {
           sender: userId, type: "normal_transfer", amount,
           description: description || `Bulk disbursement to ${name || accountNumber}`,
           status: "success", reference: `${results.batchReference}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-          receiverName: name, receiverAccountNumber: accountNumber, receiverBank: bankCode || "AmstaPay",
+          receiverName: name, receiverAccountNumber: accountNumber, receiverBank: bankCode || "BluPay",
         });
         results.successful.push({ amount, accountNumber, name, reference: txn.reference });
       } catch (err) {

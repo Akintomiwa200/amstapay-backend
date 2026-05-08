@@ -52,7 +52,7 @@ exports.merchantPayment = async (req, res) => {
     const { merchantAccountNumber, amount, description } = req.body;
     if (!merchantAccountNumber || !amount) return res.status(400).json({ message: "merchantAccountNumber and amount required" });
 
-    const merchant = await User.findOne({ amstapayAccountNumber: merchantAccountNumber });
+    const merchant = await User.findOne({ blupayAccountNumber: merchantAccountNumber });
     if (!merchant) return res.status(404).json({ message: "Merchant not found" });
     if (merchant._id.toString() === req.user._id.toString()) return res.status(400).json({ message: "Cannot pay yourself" });
 
