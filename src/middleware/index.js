@@ -34,12 +34,7 @@ module.exports = (app) => {
   }));
 
   app.use(cors({
-    origin: process.env.NODE_ENV === "production"
-      ? (origin, callback) => {
-          if (!origin || ALLOWED_ORIGINS.indexOf(origin) !== -1) callback(null, true);
-          else callback(new Error("Not allowed by CORS"));
-        }
-      : true,
+    origin: true,
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization", "X-Device-Id", "X-Requested-With"],
