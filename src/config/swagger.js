@@ -191,7 +191,7 @@ const options = {
         description: "🧪 Local Development",
       },
       {
-        url: "https://blupay-backend.onrender.com/api/v1",
+        url: "https://amstapay-backend.onrender.com/api/v1",
         description: "🚀 Production",
       },
       ...(isProd
