@@ -1,5 +1,6 @@
 // src/controllers/bankController.js
 const Wallet = require('../models/Wallet');
+const { verifyAccount } = require('../services/paystackService');
 
 // Get bank balance
 const getBalance = async (req, res) => {
@@ -44,7 +45,33 @@ const transfer = async (req, res) => {
   }
 };
 
+// Verify bank account
+const verifyBankAccount = async (req, res) => {
+  try {
+    const { bankCode, accountNumber } = req.body;
+
+    if (!bankCode || !accountNumber) {
+      return res.status(400).json({ message: 'bankCode and accountNumber are required' });
+    }
+
+    const result = await verifyAccount(bankCode, accountNumber);
+    
+    if (result.status === false) {
+      return res.status(400).json({ message: 'Unable to verify account' });
+    }
+
+    res.json({
+      accountName: result.data.account_name,
+      accountNumber: result.data.account_number,
+      bankCode: result.data.bank_code,
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
 module.exports = {
   getBalance,
-  transfer
+  transfer,
+  verifyBankAccount
 };

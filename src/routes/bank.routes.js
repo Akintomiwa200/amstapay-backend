@@ -102,4 +102,7 @@ router.get("/balance", protect, bankController.getBalance);
  */
 router.post("/transfer", protect, bankController.transfer);
 
+// Verify bank account
+router.post("/verify", protect, bankController.verifyBankAccount);
+
 module.exports = router;

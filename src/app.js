@@ -5,7 +5,7 @@ const express = require("express");
 console.log("🚀 Starting Blupay API...");
 
 // ===== Load routes with debugging =====
-let authRoutes, paymentRoutes, walletRoutes, transactionRoutes, userRoutes, webhookRoutes, bankRoutes, giftcardRoutes, loanRoutes, investRoutes, reportRoutes, billsRoutes, internationalRoutes, web3Routes, savingsRoutes, recurringRoutes, cableRoutes, virtualCardRoutes, escrowRoutes, bulkRoutes, twofaRoutes, ussdRoutes, supportRoutes, adminRoutes, insuranceRoutes, referralRoutes, paymentLinksRoutes, moneyRequestRoutes, scheduledPaymentRoutes, groupContributionRoutes, fixedDepositRoutes, microLoanRoutes, extendedBillsRoutes, paymentWebhookRoutes, billSplitRoutes, invoiceRoutes, cashbackRoutes, budgetRoutes, jointAccountRoutes, roundupRoutes, voucherRoutes, subscriptionRoutes;
+let authRoutes, paymentRoutes, walletRoutes, transactionRoutes, userRoutes, webhookRoutes, bankRoutes, giftcardRoutes, loanRoutes, investRoutes, reportRoutes, billsRoutes, internationalRoutes, web3Routes, savingsRoutes, recurringRoutes, cableRoutes, virtualCardRoutes, escrowRoutes, bulkRoutes, twofaRoutes, ussdRoutes, supportRoutes, adminRoutes, insuranceRoutes, referralRoutes, paymentLinksRoutes, moneyRequestRoutes, scheduledPaymentRoutes, groupContributionRoutes, fixedDepositRoutes, microLoanRoutes, extendedBillsRoutes, paymentWebhookRoutes, billSplitRoutes, invoiceRoutes, cashbackRoutes, budgetRoutes, jointAccountRoutes, roundupRoutes, voucherRoutes, subscriptionRoutes, beneficiaryRoutes;
 
 try {
   console.log("📁 Loading auth routes...");
@@ -139,6 +139,13 @@ try {
 }
 
 try {
+  beneficiaryRoutes = require("./routes/beneficiary.routes");
+  console.log("✅ Beneficiary routes loaded");
+} catch (err) {
+  console.error("❌ Error loading beneficiary routes:", err.message);
+}
+
+try {
   paymentLinksRoutes = require("./routes/paymentLinks.routes");
   moneyRequestRoutes = require("./routes/moneyRequest.routes");
   scheduledPaymentRoutes = require("./routes/scheduledPayment.routes");
@@ -215,6 +222,7 @@ if (roundupRoutes) app.use(`${API_VERSION}/roundup-savings`, roundupRoutes);
 if (voucherRoutes) app.use(`${API_VERSION}/vouchers`, voucherRoutes);
 if (subscriptionRoutes) app.use(`${API_VERSION}/subscriptions`, subscriptionRoutes);
 if (notificationRoutes) app.use(`${API_VERSION}/notifications`, notificationRoutes);
+if (beneficiaryRoutes) app.use(`${API_VERSION}/beneficiaries`, beneficiaryRoutes);
 
 // Also keep backward compatibility for webhook (often needs raw body)
 if (webhookRoutes) app.use("/api/webhook", webhookRoutes);

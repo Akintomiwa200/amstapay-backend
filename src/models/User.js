@@ -55,7 +55,7 @@ const userSchema = new mongoose.Schema(
     email: { type: String, unique: true, sparse: true },
     phoneNumber: { type: String, unique: true, sparse: true },
 
-    blupayAccountNumber: { type: String, unique: true },
+    blupayAccountNumber: { type: String, unique: true, sparse: true },
     pin: { type: String, required: true },
     password: { type: String, required: true, minlength: 6 },
 
