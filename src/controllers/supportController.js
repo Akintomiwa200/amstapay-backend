@@ -1,5 +1,6 @@
 const SupportTicket = require("../models/SupportTicket");
 const User = require("../models/User");
+const realTimeService = require("../services/realTimeService");
 
 exports.createTicket = async (req, res) => {
   try {
@@ -54,9 +55,14 @@ exports.replyTicket = async (req, res) => {
     if (!ticket) return res.status(404).json({ message: "Ticket not found" });
     if (ticket.status === "closed") return res.status(400).json({ message: "Ticket is closed" });
 
-    ticket.messages.push({ sender: req.user._id, message, isStaff: req.user.role === "admin" });
+    const newMessage = { sender: req.user._id, message, isStaff: req.user.role === "admin", createdAt: new Date() };
+    ticket.messages.push(newMessage);
     ticket.status = ticket.status === "open" ? "in_progress" : ticket.status;
     await ticket.save();
+    
+    // Emit the new message via Socket.IO
+    realTimeService.emit("support:message", { ticketId: ticket._id, message: newMessage }, ticket.user);
+    
     res.json({ success: true, data: ticket });
   } catch (err) {
     res.status(500).json({ message: err.message });

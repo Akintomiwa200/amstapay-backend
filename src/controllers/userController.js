@@ -9,6 +9,7 @@ const RefreshToken = require("../models/RefreshToken");
 const AuditLog = require("../models/AuditLog");
 const LoginAttempt = require("../models/LoginAttempt");
 const jwt = require("jsonwebtoken");
+const realTimeService = require("../services/realTimeService");
 const bcrypt = require("bcryptjs");
 
 // Allowed fields by account type
@@ -479,6 +480,9 @@ exports.deleteAccount = async (req, res) => {
       AuditLog.deleteMany({ user: req.user._id }),
       LoginAttempt.deleteMany({ user: req.user._id }),
     ]);
+
+    // Disconnect all user sockets in real-time before deleting
+    realTimeService.disconnectUser(req.user._id);
 
     await User.findByIdAndDelete(req.user._id);
 

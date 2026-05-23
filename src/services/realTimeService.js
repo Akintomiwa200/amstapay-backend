@@ -36,3 +36,9 @@ exports.emitNotification = (notification, userId) => {
 exports.emitAlert = (type, message, userId) => {
   exports.emit("alert", { type, message }, userId);
 };
+
+exports.disconnectUser = (userId) => {
+  if (!io) return;
+  io.in(`user:${userId}`).emit("account:deleted", { userId });
+  io.in(`user:${userId}`).disconnectSockets(true);
+};

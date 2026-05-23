@@ -5,6 +5,9 @@ const connectDB = require("./config/db");
 const http = require("http");
 const { Server: SocketIOServer } = require("socket.io");
 const { initNotificationService, getWhatsAppStatus } = require("./services/customNotificationService");
+const realTimeService = require("./services/realTimeService");
+const jwt = require("jsonwebtoken");
+const User = require("./models/User");
 const os = require("os");
 
 const PORT = process.env.PORT || 3000;
@@ -575,6 +578,30 @@ const startServer = async () => {
     const io = new SocketIOServer(server, {
       cors: { origin: "*", methods: ["GET", "POST"] },
     });
+
+    // Socket.IO auth middleware
+    io.use(async (socket, next) => {
+      try {
+        const token = socket.handshake.auth?.token || socket.handshake.query?.token;
+        if (!token) return next(new Error("Authentication required"));
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const user = await User.findById(decoded.id).select("_id email");
+        if (!user) return next(new Error("User not found"));
+        socket.userId = user._id.toString();
+        next();
+      } catch (err) {
+        next(new Error("Invalid token"));
+      }
+    });
+
+    io.on("connection", (socket) => {
+      socket.join(`user:${socket.userId}`);
+      socket.on("disconnect", () => {
+        socket.leave(`user:${socket.userId}`);
+      });
+    });
+
+    realTimeService.init(io);
 
     server.listen(PORT, () => {
       initNotificationService(io);

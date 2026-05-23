@@ -133,6 +133,13 @@ try {
 }
 
 try {
+  notificationRoutes = require("./routes/v1/notificationRoutes");
+  console.log("✅ Notification routes loaded");
+} catch (err) {
+  console.error("❌ Error loading notification routes:", err.message);
+}
+
+try {
   paymentLinksRoutes = require("./routes/paymentLinks.routes");
   moneyRequestRoutes = require("./routes/moneyRequest.routes");
   scheduledPaymentRoutes = require("./routes/scheduledPayment.routes");
@@ -213,6 +220,7 @@ if (jointAccountRoutes) app.use(`${API_VERSION}/joint-accounts`, jointAccountRou
 if (roundupRoutes) app.use(`${API_VERSION}/roundup-savings`, roundupRoutes);
 if (voucherRoutes) app.use(`${API_VERSION}/vouchers`, voucherRoutes);
 if (subscriptionRoutes) app.use(`${API_VERSION}/subscriptions`, subscriptionRoutes);
+if (notificationRoutes) app.use(`${API_VERSION}/notifications`, notificationRoutes);
 
 // Also keep backward compatibility for webhook (often needs raw body)
 if (webhookRoutes) app.use("/api/webhook", webhookRoutes);
