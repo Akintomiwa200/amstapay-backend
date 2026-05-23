@@ -1,7 +1,6 @@
 // app.js - Blupay API bootstrap
 require("dotenv").config();
 const express = require("express");
-const { getWhatsAppStatus } = require("./services/customNotificationService");
 
 console.log("🚀 Starting Blupay API...");
 
@@ -166,11 +165,6 @@ applyMiddleware(app);
 // ===== Health check =====
 app.get("/health", (req, res) => {
   res.json({ status: "ok", message: "Blupay API is running 🚀" });
-});
-
-// ===== WhatsApp status =====
-app.get("/api/whatsapp/status", (req, res) => {
-  res.json(getWhatsAppStatus());
 });
 
 // API base version path

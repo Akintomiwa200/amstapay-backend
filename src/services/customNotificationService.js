@@ -1,14 +1,8 @@
 const fs = require("fs");
 const path = require("path");
 const axios = require("axios");
-const { Client, LocalAuth } = require("whatsapp-web.js");
-const qrcode = require("qrcode-terminal");
 
 let io = null;
-let whatsappClient = null;
-let whatsappReady = false;
-let lastQR = null;
-let qrGeneratedAt = null;
 
 const queue = [];
 
@@ -42,63 +36,9 @@ function getSmsEmail(phone) {
 // ─── Init ────────────────────────────────────────────────────────────────
 const initNotificationService = (socketIO = null) => {
   io = socketIO;
-  initWhatsApp();
   setInterval(() => { processQueue(); }, 200);
   return { sendNotification, subscribe, sendOTP, sendTransactionAlert };
 };
-
-// ─── WhatsApp Client ──────────────────────────────────────────────────────
-function initWhatsApp() {
-  const sessionPath = path.join(__dirname, "..", ".wwebjs_auth");
-  if (!fs.existsSync(sessionPath)) {
-    fs.mkdirSync(sessionPath, { recursive: true });
-  }
-
-  whatsappClient = new Client({
-    authStrategy: new LocalAuth({ dataPath: sessionPath }),
-    puppeteer: {
-      headless: true,
-      args: ["--no-sandbox", "--disable-setuid-sandbox"],
-    },
-  });
-
-  whatsappClient.on("qr", (qr) => {
-    lastQR = qr;
-    qrGeneratedAt = Date.now();
-    qrcode.generate(qr, { small: true });
-    console.log("\n[WhatsApp] Scan the QR above with your phone to link");
-    if (io) io.emit("whatsapp:qr", { qr, expiresAt: qrGeneratedAt + 60000 });
-  });
-
-  whatsappClient.on("ready", () => {
-    whatsappReady = true;
-    console.log("[WhatsApp] Ready — sending messages for free \u2705");
-    if (io) io.emit("whatsapp:ready");
-  });
-
-  whatsappClient.on("auth_failure", (msg) => {
-    console.error("[WhatsApp] Auth failure:", msg);
-    whatsappReady = false;
-  });
-
-  whatsappClient.on("disconnected", (reason) => {
-    console.log("[WhatsApp] Disconnected:", reason);
-    whatsappReady = false;
-    setTimeout(() => {
-      console.log("[WhatsApp] Reconnecting...");
-      whatsappClient.initialize();
-    }, 5000);
-  });
-
-  whatsappClient.initialize();
-}
-
-const getWhatsAppStatus = () => ({
-  ready: whatsappReady,
-  hasQR: !!lastQR,
-  qr: lastQR,
-  qrExpiresAt: qrGeneratedAt ? qrGeneratedAt + 60000 : null,
-});
 
 // ─── Public API ──────────────────────────────────────────────────────────
 const sendNotification = async (params) => {
@@ -118,8 +58,6 @@ const sendOTP = async ({ userId, email, phone, fullName, code }) => {
   if (phone) {
     queue.push({ type: "otp_sms", to: phone, message: `Your BluPay OTP is: ${code}`, channel: "sms", userId, timestamp: new Date() });
     results.sms = "queued";
-    queue.push({ type: "otp_whatsapp", to: phone, message: `\uD83D\uDD10 BluPay Verification Code: ${code}\n\nExpires in 10 minutes`, channel: "whatsapp", userId, timestamp: new Date() });
-    results.whatsapp = "queued";
   }
   return results;
 };
@@ -128,11 +66,11 @@ const sendTransactionAlert = async ({ userId, email, phone, transaction }) => {
   const { amount, status, type, reference } = transaction;
   const results = {};
   if (email) {
-    queue.push({ type: "transaction_email", to: email, subject: `Transaction ${status}`, message: `Your ${type} of \u20A6${amount} is ${status}. Ref: ${reference}`, channel: "email", userId, timestamp: new Date() });
+    queue.push({ type: "transaction_email", to: email, subject: `Transaction ${status}`, message: `Your ${type} of ₦${amount} is ${status}. Ref: ${reference}`, channel: "email", userId, timestamp: new Date() });
     results.email = "queued";
   }
   if (phone) {
-    queue.push({ type: "transaction_sms", to: phone, message: `BluPay: ${type} \u20A6${amount} - ${status} (${reference})`, channel: "sms", userId, timestamp: new Date() });
+    queue.push({ type: "transaction_sms", to: phone, message: `BluPay: ${type} ₦${amount} - ${status} (${reference})`, channel: "sms", userId, timestamp: new Date() });
     results.sms = "queued";
   }
   return results;
@@ -155,9 +93,6 @@ const processQueue = async () => {
       case "sms":
         await sendSMSNotification(notification);
         break;
-      case "whatsapp":
-        await sendWhatsAppNotification(notification);
-        break;
     }
     if (io) io.emit("notification:sent", { channel: notification.channel, to: notification.to, status: "sent" });
   } catch (error) {
@@ -171,7 +106,7 @@ const processQueue = async () => {
   }
 };
 
-// ─── Email (nodemailer — already working) ────────────────────────────────
+// ─── Email (nodemailer) ──────────────────────────────────────────────────
 const sendEmailNotification = async (notification) => {
   const nodemailer = require("nodemailer");
   const transporter = nodemailer.createTransport({
@@ -222,23 +157,6 @@ const sendSMSNotification = async (notification) => {
   console.log(`[SMS] Sent to ${notification.to} via ${smsEmail}`);
 };
 
-// ─── WhatsApp (free via whatsapp-web.js) ─────────────────────────────────
-const sendWhatsAppNotification = async (notification) => {
-  if (!whatsappReady) {
-    console.log(`[WhatsApp] Client not ready — requeueing ${notification.to}`);
-    notification.attempts = (notification.attempts || 0) + 1;
-    if (notification.attempts < 3) queue.unshift(notification);
-    return;
-  }
-
-  const chatId = notification.to.includes("@c.us")
-    ? notification.to
-    : `${notification.to.replace(/^0/, "234")}@c.us`;
-
-  const response = await whatsappClient.sendMessage(chatId, notification.message);
-  console.log(`[WhatsApp] Sent to ${notification.to} (id: ${response.id.id})`);
-};
-
 // ─── Email HTML ──────────────────────────────────────────────────────────
 const formatEmail = (notification) => {
   if (notification.type === "otp_email") {
@@ -256,12 +174,10 @@ const formatEmail = (notification) => {
 // ─── Status ──────────────────────────────────────────────────────────────
 const getQueueStatus = () => ({
   pending: queue.length,
-  whatsapp: { ready: whatsappReady, hasQR: !!lastQR },
 });
 
 module.exports = {
   initNotificationService,
-  getWhatsAppStatus,
   sendNotification,
   subscribe,
   sendOTP,

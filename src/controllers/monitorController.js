@@ -1,5 +1,4 @@
 const mongoose = require("mongoose");
-const { getWhatsAppStatus } = require("../services/customNotificationService");
 const cacheService = require("../services/cacheService");
 const jobQueueService = require("../services/jobQueueService");
 const prometheus = require("../services/metricsService");
@@ -13,7 +12,6 @@ exports.deepHealth = async (req, res) => {
     database: { status: dbState === 1 ? "connected" : "disconnected", state: ["disconnected", "connected", "connecting", "disconnecting"][dbState] },
     cache: { redis: cacheService.isRedisAvailable(), memory: "available" },
     queue: jobQueueService.getQueueStats(),
-    whatsapp: getWhatsAppStatus(),
     memory: process.memoryUsage(),
     node: process.version,
     pid: process.pid,
