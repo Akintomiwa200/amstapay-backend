@@ -7,7 +7,7 @@ const bodyParser = require("body-parser");
 
 const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(",").map(s => s.trim())
-  : ["http://localhost:3000", "http://localhost:5173", "https://blupay.com"];
+  : ["http://localhost:3000", "http://localhost:5173", "https://blupay.com", "https://amstapay-backend.onrender.com"];
 
 module.exports = (app) => {
   app.set("trust proxy", 1);
